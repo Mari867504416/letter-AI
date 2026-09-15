@@ -3,1508 +3,1179 @@
 
 <head>
 
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-<title>
-Revenue Office Drafting Assistant
-</title>
+  <title>
+    Revenue Office Drafting Assistant
+  </title>
 
-<style>
+  <style>
 
-* {
-  box-sizing: border-box;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-body {
+    body {
+      margin: 0;
+      font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
 
-  margin: 0;
+      background:
+        #eef3f8;
 
-  font-family:
-    "Segoe UI",
-    Arial,
-    sans-serif;
+      color:
+        #172033;
+    }
 
-  background:
-    #eef2f7;
+    /* ============================
+       HEADER
+       ============================ */
 
-  color:
-    #172033;
-}
+    header {
+      background:
+        linear-gradient(
+          135deg,
+          #071b3a,
+          #0b3d78
+        );
 
+      color: white;
 
-/* =========================================================
-   HEADER
-========================================================= */
+      padding:
+        18px 28px;
 
-.header {
+      display: flex;
 
-  background:
-    linear-gradient(
-      135deg,
-      #071d3b,
-      #0b3b70
-    );
+      align-items: center;
 
-  color: white;
+      justify-content: space-between;
 
-  padding:
-    22px 30px;
+      box-shadow:
+        0 3px 12px
+        rgba(0,0,0,.18);
+    }
 
-  box-shadow:
-    0 3px 15px
-    rgba(0,0,0,.15);
+    .brand h1 {
+      margin: 0;
 
-}
+      font-size: 23px;
 
-.header-inner {
+      font-weight: 700;
+    }
 
-  max-width:
-    1450px;
+    .brand p {
+      margin:
+        5px 0 0;
 
-  margin:
-    auto;
+      font-size: 13px;
 
-  display:
-    flex;
+      opacity: .82;
+    }
 
-  justify-content:
-    space-between;
+    .status {
+      display: flex;
 
-  align-items:
-    center;
+      gap: 8px;
 
-  gap:
-    20px;
+      align-items: center;
+    }
 
-}
+    .status-dot {
+      width: 10px;
 
-.title {
+      height: 10px;
 
-  font-size:
-    25px;
+      border-radius: 50%;
 
-  font-weight:
-    700;
+      background: #f4b942;
+    }
 
-}
+    /* ============================
+       LAYOUT
+       ============================ */
 
-.subtitle {
+    .container {
+      max-width: 1500px;
 
-  margin-top:
-    5px;
+      margin:
+        22px auto;
 
-  color:
-    #dbe8f8;
+      padding:
+        0 18px;
+    }
 
-  font-size:
-    14px;
+    .grid {
+      display: grid;
 
-}
+      grid-template-columns:
+        1fr 1fr;
 
-.badge {
+      gap: 18px;
+    }
 
-  background:
-    #d9a441;
+    @media(max-width: 900px) {
 
-  color:
-    #111;
+      .grid {
+        grid-template-columns:
+          1fr;
+      }
 
-  padding:
-    8px 13px;
+    }
 
-  border-radius:
-    20px;
+    .card {
+      background: white;
 
-  font-size:
-    12px;
+      border-radius: 12px;
 
-  font-weight:
-    700;
+      padding: 20px;
 
-}
+      box-shadow:
+        0 2px 10px
+        rgba(0,0,0,.08);
 
+      border:
+        1px solid #dce4ef;
+    }
 
-/* =========================================================
-   MAIN
-========================================================= */
+    .card-title {
+      font-size: 18px;
 
-.container {
+      font-weight: 700;
 
-  max-width:
-    1450px;
+      color:
+        #0a356d;
 
-  margin:
-    25px auto;
+      margin-bottom: 15px;
 
-  padding:
-    0 18px;
+      display: flex;
 
-}
+      align-items: center;
 
+      gap: 8px;
+    }
 
-.grid {
+    /* ============================
+       FORM
+       ============================ */
 
-  display:
-    grid;
+    label {
+      display: block;
 
-  grid-template-columns:
-    1fr 1fr;
+      margin:
+        12px 0 6px;
 
-  gap:
-    20px;
+      font-size: 13px;
 
-}
+      font-weight: 700;
 
+      color:
+        #344054;
+    }
 
-/* =========================================================
-   CARD
-========================================================= */
+    textarea,
+    input,
+    select {
 
-.card {
+      width: 100%;
 
-  background:
-    white;
+      border:
+        1px solid #cbd5e1;
 
-  border-radius:
-    12px;
+      border-radius: 8px;
 
-  border:
-    1px solid #dce3ec;
+      padding: 11px;
 
-  box-shadow:
-    0 3px 12px
-    rgba(0,0,0,.06);
+      font-family:
+        inherit;
 
-  overflow:
-    hidden;
+      font-size: 14px;
 
-}
+      outline: none;
 
-.card-header {
+      background:
+        #fbfdff;
+    }
 
-  background:
-    #f6f8fb;
+    textarea:focus,
+    input:focus,
+    select:focus {
 
-  border-bottom:
-    1px solid #e2e7ee;
+      border-color:
+        #0b5cab;
 
-  padding:
-    15px 18px;
+      box-shadow:
+        0 0 0 3px
+        rgba(11,92,171,.10);
+    }
 
-  font-weight:
-    700;
+    #sourceText {
+      min-height: 270px;
 
-  color:
-    #0b376b;
+      resize: vertical;
+    }
 
-}
+    #workCommand {
+      min-height: 150px;
 
-.card-body {
+      resize: vertical;
+    }
 
-  padding:
-    18px;
+    #alterCommand {
+      min-height: 110px;
 
-}
+      resize: vertical;
+    }
 
+    /* ============================
+       BUTTONS
+       ============================ */
 
-/* =========================================================
-   FORM
-========================================================= */
+    .button-row {
+      display: flex;
 
-label {
+      flex-wrap: wrap;
 
-  display:
-    block;
+      gap: 9px;
 
-  font-weight:
-    600;
+      margin-top: 14px;
+    }
 
-  margin-bottom:
-    7px;
+    button {
 
-  color:
-    #24344d;
+      border: none;
 
-}
+      border-radius: 8px;
 
-textarea,
-input,
-select {
+      padding:
+        10px 16px;
 
-  width:
-    100%;
+      font-size: 14px;
 
-  border:
-    1px solid #cbd5e1;
+      font-weight: 700;
 
-  border-radius:
-    8px;
+      cursor: pointer;
 
-  padding:
-    11px 12px;
+      transition:
+        .15s ease;
+    }
 
-  font-family:
-    inherit;
+    button:hover {
+      transform:
+        translateY(-1px);
 
-  font-size:
-    14px;
+      opacity: .94;
+    }
 
-  outline:
-    none;
+    .primary {
 
-  background:
-    #fff;
+      background:
+        #0b4f91;
 
-}
+      color: white;
+    }
 
-textarea {
+    .gold {
 
-  min-height:
-    230px;
+      background:
+        #c99522;
 
-  resize:
-    vertical;
+      color: white;
+    }
 
-  line-height:
-    1.55;
+    .green {
 
-}
+      background:
+        #177245;
 
-textarea:focus,
-input:focus,
-select:focus {
+      color: white;
+    }
 
-  border-color:
-    #1769aa;
+    .gray {
 
-  box-shadow:
-    0 0 0 3px
-    rgba(23,105,170,.1);
+      background:
+        #64748b;
 
-}
+      color: white;
+    }
 
-.form-group {
+    .red {
 
-  margin-bottom:
-    15px;
+      background:
+        #b42318;
 
-}
+      color: white;
+    }
 
-.row {
+    .light {
 
-  display:
-    grid;
+      background:
+        #e8eef6;
 
-  grid-template-columns:
-    1fr 1fr;
+      color:
+        #15385f;
+    }
 
-  gap:
-    12px;
+    /* ============================
+       PDF BOX
+       ============================ */
 
-}
+    .upload-box {
 
+      border:
+        2px dashed #b9c8da;
 
-/* =========================================================
-   BUTTONS
-========================================================= */
+      background:
+        #f7faff;
 
-button {
+      border-radius: 10px;
 
-  border:
-    none;
+      padding: 14px;
 
-  border-radius:
-    8px;
+      margin-top: 8px;
+    }
 
-  padding:
-    11px 16px;
+    .upload-box input {
+      background:
+        white;
+    }
 
-  font-family:
-    inherit;
+    .small {
+      font-size: 12px;
 
-  font-size:
-    14px;
+      color:
+        #667085;
 
-  font-weight:
-    600;
+      margin-top: 7px;
+    }
 
-  cursor:
-    pointer;
+    /* ============================
+       OUTPUT
+       ============================ */
 
-  transition:
-    .2s;
+    .tabs {
 
-}
+      display: flex;
 
-button:hover {
+      gap: 5px;
 
-  transform:
-    translateY(-1px);
+      margin-bottom: 10px;
+    }
 
-}
+    .tab {
 
-.primary {
+      background:
+        #e8eef6;
 
-  background:
-    #0b4f8a;
+      color:
+        #15385f;
 
-  color:
-    white;
+      padding:
+        9px 14px;
+    }
 
-}
+    .tab.active {
 
-.primary:hover {
+      background:
+        #0b4f91;
 
-  background:
-    #083d6c;
+      color:
+        white;
+    }
 
-}
+    .output {
 
-.secondary {
+      min-height: 550px;
 
-  background:
-    #e9eef5;
+      background:
+        #fcfcfd;
 
-  color:
-    #20354f;
+      border:
+        1px solid #d8dee8;
 
-}
+      border-radius: 8px;
 
-.gold {
+      padding: 18px;
 
-  background:
-    #d7a23a;
+      white-space: pre-wrap;
 
-  color:
-    #111;
+      overflow-y: auto;
 
-}
+      font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
 
-.danger {
+      font-size: 15px;
 
-  background:
-    #f4dddd;
+      line-height: 1.65;
+    }
 
-  color:
-    #8b1d1d;
+    .key-points {
 
-}
+      margin-top: 14px;
 
-.button-row {
+      padding: 12px;
 
-  display:
-    flex;
+      background:
+        #fff9e8;
 
-  flex-wrap:
-    wrap;
+      border:
+        1px solid #efd98b;
 
-  gap:
-    9px;
+      border-radius: 8px;
+    }
 
-  margin-top:
-    12px;
+    .key-points strong {
 
-}
+      color:
+        #785500;
+    }
 
+    /* ============================
+       ALTER
+       ============================ */
 
-/* =========================================================
-   PDF BOX
-========================================================= */
+    .alter-box {
 
-.pdf-box {
+      margin-top: 18px;
 
-  margin-top:
-    15px;
+      border-top:
+        1px solid #dce4ef;
 
-  padding:
-    15px;
+      padding-top: 18px;
+    }
 
-  border:
-    2px dashed #b9c8da;
+    /* ============================
+       LOADING
+       ============================ */
 
-  border-radius:
-    9px;
+    .loading {
 
-  background:
-    #f8fafc;
+      display: none;
 
-}
+      position: fixed;
 
-.pdf-title {
+      inset: 0;
 
-  font-weight:
-    700;
+      background:
+        rgba(0,0,0,.45);
 
-  color:
-    #0b4f8a;
+      z-index: 9999;
 
-  margin-bottom:
-    8px;
+      align-items: center;
 
-}
+      justify-content: center;
+    }
 
-.pdf-info {
+    .loading.show {
+      display: flex;
+    }
 
-  font-size:
-    12px;
+    .loading-card {
 
-  color:
-    #64748b;
+      background:
+        white;
 
-  margin-top:
-    7px;
+      padding:
+        25px 35px;
 
-}
+      border-radius:
+        12px;
 
+      text-align:
+        center;
 
-/* =========================================================
-   STATUS
-========================================================= */
+      box-shadow:
+        0 8px 35px
+        rgba(0,0,0,.25);
+    }
 
-.status {
+    .spinner {
 
-  margin-top:
-    10px;
+      width: 35px;
 
-  padding:
-    9px 11px;
+      height: 35px;
 
-  border-radius:
-    7px;
+      border:
+        4px solid #dbe5f0;
 
-  background:
-    #f1f5f9;
+      border-top:
+        4px solid #0b4f91;
 
-  font-size:
-    13px;
+      border-radius:
+        50%;
 
-}
+      animation:
+        spin 1s linear infinite;
 
-.status.success {
+      margin:
+        0 auto 12px;
+    }
 
-  background:
-    #e7f6ed;
+    @keyframes spin {
 
-  color:
-    #166534;
+      to {
+        transform:
+          rotate(360deg);
+      }
 
-}
+    }
 
-.status.error {
+    /* ============================
+       TOAST
+       ============================ */
 
-  background:
-    #fdecec;
+    #toast {
 
-  color:
-    #991b1b;
+      position: fixed;
 
-}
+      bottom: 20px;
 
-.status.loading {
+      right: 20px;
 
-  background:
-    #fff7df;
+      background:
+        #172033;
 
-  color:
-    #7c5a00;
+      color: white;
 
-}
+      padding:
+        12px 18px;
 
+      border-radius:
+        8px;
 
-/* =========================================================
-   OUTPUT
-========================================================= */
+      display: none;
 
-.output-card {
+      z-index: 10000;
 
-  grid-column:
-    1 / -1;
+      max-width: 400px;
+    }
 
-}
+    /* ============================
+       FOOTER
+       ============================ */
 
-.tabs {
+    footer {
 
-  display:
-    flex;
+      text-align:
+        center;
 
-  border-bottom:
-    1px solid #dce3ec;
+      color:
+        #667085;
 
-}
+      font-size:
+        12px;
 
-.tab {
+      padding:
+        20px;
+    }
 
-  background:
-    #f4f6f9;
-
-  color:
-    #526174;
-
-  border-radius:
-    0;
-
-  padding:
-    12px 20px;
-
-}
-
-.tab.active {
-
-  background:
-    white;
-
-  color:
-    #0b4f8a;
-
-  border-bottom:
-    3px solid #d7a23a;
-
-}
-
-.output {
-
-  min-height:
-    500px;
-
-  white-space:
-    pre-wrap;
-
-  font-family:
-    "Noto Sans",
-    "Latha",
-    "Arial",
-    sans-serif;
-
-  font-size:
-    14px;
-
-  line-height:
-    1.7;
-
-  background:
-    #fbfcfe;
-
-  border:
-    1px solid #dce3ec;
-
-  border-radius:
-    8px;
-
-  padding:
-    18px;
-
-  overflow:
-    auto;
-
-}
-
-
-/* =========================================================
-   CONTINUE
-========================================================= */
-
-.continue-card {
-
-  grid-column:
-    1 / -1;
-
-}
-
-.continue-info {
-
-  background:
-    #eef6ff;
-
-  border-left:
-    4px solid #1769aa;
-
-  padding:
-    12px;
-
-  margin-bottom:
-    15px;
-
-  font-size:
-    13px;
-
-}
-
-
-/* =========================================================
-   KEY POINTS
-========================================================= */
-
-.keypoints {
-
-  margin:
-    0;
-
-  padding-left:
-    22px;
-
-}
-
-.keypoints li {
-
-  margin-bottom:
-    7px;
-
-}
-
-
-/* =========================================================
-   FOOTER
-========================================================= */
-
-.footer {
-
-  text-align:
-    center;
-
-  color:
-    #66758a;
-
-  font-size:
-    12px;
-
-  padding:
-    25px;
-
-}
-
-
-/* =========================================================
-   LOADING
-========================================================= */
-
-.spinner {
-
-  display:
-    inline-block;
-
-  width:
-    14px;
-
-  height:
-    14px;
-
-  border:
-    2px solid #ccc;
-
-  border-top-color:
-    #0b4f8a;
-
-  border-radius:
-    50%;
-
-  animation:
-    spin .7s linear infinite;
-
-  vertical-align:
-    middle;
-
-  margin-right:
-    6px;
-
-}
-
-@keyframes spin {
-
-  to {
-    transform: rotate(360deg);
-  }
-
-}
-
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media(max-width: 900px) {
-
-  .grid {
-
-    grid-template-columns:
-      1fr;
-
-  }
-
-  .output-card,
-  .continue-card {
-
-    grid-column:
-      auto;
-
-  }
-
-  .row {
-
-    grid-template-columns:
-      1fr;
-
-  }
-
-  .header-inner {
-
-    flex-direction:
-      column;
-
-    align-items:
-      flex-start;
-
-  }
-
-}
-
-</style>
+  </style>
 
 </head>
 
-
 <body>
 
+<header>
 
-<!-- ========================================================
-HEADER
-========================================================= -->
+  <div class="brand">
 
-<header class="header">
+    <h1>
+      Revenue Office Drafting Assistant
+    </h1>
 
-  <div class="header-inner">
+    <p>
+      Tamil Nadu Revenue Department • Letter & Note File
+    </p>
 
-    <div>
+  </div>
 
-      <div class="title">
-        Revenue Office Drafting Assistant
-      </div>
+  <div class="status">
 
-      <div class="subtitle">
-        Collectorate Letter & Note File Generator
-      </div>
+    <span
+      id="statusDot"
+      class="status-dot">
+    </span>
 
-    </div>
-
-    <div class="badge">
-      TN REVENUE DEPARTMENT
-    </div>
+    <span id="statusText">
+      Checking...
+    </span>
 
   </div>
 
 </header>
 
 
-<!-- ========================================================
-MAIN
-========================================================= -->
+<div class="container">
 
-<main class="container">
+  <div class="grid">
 
-<div class="grid">
+    <!-- =================================================
+         LEFT SIDE
+         ================================================= -->
 
+    <div>
 
-<!-- ========================================================
-SOURCE CARD
-========================================================= -->
+      <!-- SOURCE -->
 
-<section class="card">
+      <div class="card">
 
-  <div class="card-header">
-    1. Source / Received Text
-  </div>
+        <div class="card-title">
+          📄 Source / Received Text
+        </div>
 
-  <div class="card-body">
+        <textarea
+          id="sourceText"
+          placeholder="Paste the received letter / petition / proceedings / report / file text here..."
+        ></textarea>
 
-    <div class="form-group">
+        <div class="small">
+          You can either paste text OR upload a PDF below.
+        </div>
 
-      <label for="sourceText">
-        Received Text / Petition / Report / Source
-      </label>
+        <!-- PDF -->
 
-      <textarea
-        id="sourceText"
-        placeholder="Paste the received petition, report, letter or other source material here..."
-      ></textarea>
+        <div class="upload-box">
 
-    </div>
+          <label>
+            Scanned PDF / PDF
+          </label>
 
+          <input
+            type="file"
+            id="pdfFile"
+            accept=".pdf,application/pdf"
+          >
 
-    <div class="button-row">
+          <div class="button-row">
 
-      <button
-        class="secondary"
-        onclick="pasteSource()"
-      >
-        Paste
-      </button>
+            <button
+              class="gold"
+              onclick="extractPDF()">
 
-      <button
-        class="danger"
-        onclick="clearSource()"
-      >
-        Clear
-      </button>
+              📑 Upload PDF & Extract Text
 
-    </div>
+            </button>
 
+          </div>
 
-    <!-- PDF -->
+          <div
+            id="pdfStatus"
+            class="small">
+          </div>
 
-    <div class="pdf-box">
-
-      <div class="pdf-title">
-        📄 Scanned PDF → Text
-      </div>
-
-      <input
-        type="file"
-        id="pdfFile"
-        accept="application/pdf,.pdf"
-      >
-
-      <div class="pdf-info">
-        Upload a scanned PDF. Gemini will extract the
-        text and place it in the Source / Received Text box.
-      </div>
-
-      <div class="button-row">
-
-        <button
-          class="primary"
-          id="pdfButton"
-          onclick="uploadPDF()"
-        >
-          Upload PDF & Convert to Text
-        </button>
+        </div>
 
       </div>
 
-      <div
-        id="pdfStatus"
-        class="status"
-      ></div>
 
-    </div>
+      <!-- WORK / COMMAND -->
 
-  </div>
+      <div class="card">
 
-</section>
+        <div class="card-title">
+          📝 Work / Command
+        </div>
 
-
-<!-- ========================================================
-COMMAND CARD
-========================================================= -->
-
-<section class="card">
-
-  <div class="card-header">
-    2. Work / Command
-  </div>
-
-  <div class="card-body">
-
-    <div class="form-group">
-
-      <label for="workCommand">
-        Work + Command
-      </label>
-
-      <textarea
-        id="workCommand"
-        placeholder="Example:
-Prepare a letter to the Tahsildar directing necessary field inspection and report within 7 days. Also prepare the office note for approval."
-      ></textarea>
-
-    </div>
-
-
-    <div class="row">
-
-      <div class="form-group">
-
-        <label for="language">
-          Language
+        <label>
+          Combined Work + Command
         </label>
 
-        <select id="language">
+        <textarea
+          id="workCommand"
+          placeholder="Example:
 
-          <option value="English">
-            English
-          </option>
-
-          <option value="Tamil">
-            தமிழ்
-          </option>
-
-        </select>
-
-      </div>
+Prepare a letter to the Executive Engineer, Highways Department, Hosur, requesting a recommendation report along with an undertaking to execute four-laning within one year. Submit the report within 3 days."
+        ></textarea>
 
 
-      <div class="form-group">
+        <div class="grid"
+          style="grid-template-columns:1fr 1fr; margin-top:10px;">
 
-        <label for="recipient">
-          Recipient / Addressed To
+          <div>
+
+            <label>
+              Language
+            </label>
+
+            <select id="language">
+
+              <option value="English">
+                English
+              </option>
+
+              <option value="Tamil">
+                Tamil
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Recipient
+            </label>
+
+            <input
+              id="recipient"
+              placeholder="e.g. Executive Engineer, Highways Department"
+            >
+
+          </div>
+
+        </div>
+
+
+        <label>
+          Subject
         </label>
 
         <input
-          id="recipient"
-          placeholder="e.g. The Tahsildar, ..."
+          id="subject"
+          placeholder="Optional – AI can prepare the subject from source and command"
         >
+
+
+        <div class="button-row">
+
+          <button
+            class="primary"
+            onclick="generateDraft()">
+
+            ✨ Generate Letter + Note File
+
+          </button>
+
+          <button
+            class="light"
+            onclick="clearAll()">
+
+            Clear
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- ALTER -->
+
+      <div class="card alter-box">
+
+        <div class="card-title">
+          🔄 Continue / Alter Command
+        </div>
+
+        <textarea
+          id="alterCommand"
+          placeholder="Example:
+
+Add a paragraph stating that the undertaking shall be obtained before permission is granted.
+
+OR
+
+Change the recipient to the Executive Engineer, Highways Department, Hosur."
+        ></textarea>
+
+        <div class="button-row">
+
+          <button
+            class="green"
+            onclick="continueDraft()">
+
+            🔄 Continue / Alter
+
+          </button>
+
+        </div>
+
+        <div class="small">
+
+          The original source and previous Letter / Note File
+          are automatically retained in this browser session.
+
+        </div>
 
       </div>
 
     </div>
 
 
-    <div class="form-group">
+    <!-- =================================================
+         RIGHT SIDE
+         ================================================= -->
 
-      <label for="subject">
-        Subject
-      </label>
+    <div>
 
-      <input
-        id="subject"
-        placeholder="Enter subject if known"
-      >
+      <div class="card">
 
-    </div>
-
-
-    <div class="button-row">
-
-      <button
-        class="primary"
-        id="generateButton"
-        onclick="generateDraft()"
-      >
-        Generate Letter + Note File
-      </button>
-
-      <button
-        class="gold"
-        onclick="loadExample()"
-      >
-        Example
-      </button>
-
-      <button
-        class="danger"
-        onclick="clearAll()"
-      >
-        Clear All
-      </button>
-
-    </div>
+        <div class="card-title">
+          📋 Draft Output
+        </div>
 
 
-    <div
-      id="generateStatus"
-      class="status"
-    ></div>
+        <div class="tabs">
 
-  </div>
+          <button
+            id="letterTab"
+            class="tab active"
+            onclick="showTab('letter')">
 
-</section>
+            Letter
 
+          </button>
 
-<!-- ========================================================
-OUTPUT CARD
-========================================================= -->
+          <button
+            id="noteTab"
+            class="tab"
+            onclick="showTab('note')">
 
-<section class="card output-card">
+            Note File
 
-  <div class="card-header">
-    3. Generated Output
-  </div>
+          </button>
 
-
-  <div class="tabs">
-
-    <button
-      class="tab active"
-      id="letterTab"
-      onclick="showTab('letter')"
-    >
-      Letter
-    </button>
-
-    <button
-      class="tab"
-      id="noteTab"
-      onclick="showTab('note')"
-    >
-      Note File
-    </button>
-
-  </div>
+        </div>
 
 
-  <div class="card-body">
+        <div
+          id="output"
+          class="output">
 
-    <div
-      id="letterOutput"
-      class="output"
-    >
-      Letter will appear here...
-    </div>
+          Generated Letter / Note File
+          will appear here.
 
-    <div
-      id="noteOutput"
-      class="output"
-      style="display:none;"
-    >
-      Note File will appear here...
-    </div>
+        </div>
 
 
-    <div class="button-row">
+        <div
+          id="keyPoints"
+          class="key-points"
+          style="display:none;">
 
-      <button
-        class="secondary"
-        onclick="copyCurrentOutput()"
-      >
-        Copy
-      </button>
+        </div>
 
-      <button
-        class="gold"
-        onclick="downloadWord()"
-      >
-        Download Letter + Note File – Word
-      </button>
 
-      <button
-        class="secondary"
-        onclick="printCurrentOutput()"
-      >
-        Print
-      </button>
+        <div class="button-row">
+
+          <button
+            class="gray"
+            onclick="copyOutput()">
+
+            📋 Copy
+
+          </button>
+
+          <button
+            class="green"
+            onclick="downloadWord()">
+
+            📄 Download Word
+
+          </button>
+
+          <button
+            class="light"
+            onclick="printOutput()">
+
+            🖨 Print
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- SYSTEM INFORMATION -->
+
+      <div class="card">
+
+        <div class="card-title">
+          ⚙ System
+        </div>
+
+        <div id="systemInfo"
+          class="small">
+
+          Loading system information...
+
+        </div>
+
+      </div>
 
     </div>
 
   </div>
-
-</section>
-
-
-<!-- ========================================================
-CONTINUE CARD
-========================================================= -->
-
-<section class="card continue-card">
-
-  <div class="card-header">
-    4. Continue / Alter Existing Draft
-  </div>
-
-  <div class="card-body">
-
-    <div class="continue-info">
-
-      The original Source Text and previous Letter /
-      Note File are automatically retained.
-      Enter only the new alteration or further instruction.
-
-    </div>
-
-
-    <div class="form-group">
-
-      <label for="alterCommand">
-        Continue / Alter Command
-      </label>
-
-      <textarea
-        id="alterCommand"
-        style="min-height:180px;"
-        placeholder="Example:
-Change the recipient to the Revenue Divisional Officer.
-Add that the report may be submitted within 7 days.
-Remove the last paragraph."
-      ></textarea>
-
-    </div>
-
-
-    <div class="button-row">
-
-      <button
-        class="primary"
-        id="continueButton"
-        onclick="continueDraft()"
-      >
-        Continue / Alter Draft
-      </button>
-
-    </div>
-
-
-    <div
-      id="continueStatus"
-      class="status"
-    ></div>
-
-  </div>
-
-</section>
-
-
-<!-- ========================================================
-KEY POINTS
-========================================================= -->
-
-<section class="card">
-
-  <div class="card-header">
-    5. Key Points
-  </div>
-
-  <div class="card-body">
-
-    <ul
-      id="keyPoints"
-      class="keypoints"
-    >
-
-      <li>
-        No generated points yet.
-      </li>
-
-    </ul>
-
-  </div>
-
-</section>
-
-
-<!-- ========================================================
-SERVER STATUS
-========================================================= -->
-
-<section class="card">
-
-  <div class="card-header">
-    Server Status
-  </div>
-
-  <div class="card-body">
-
-    <div
-      id="serverStatus"
-      class="status"
-    >
-      Checking server...
-    </div>
-
-  </div>
-
-</section>
-
 
 </div>
 
-</main>
 
-
-<footer class="footer">
+<footer>
 
   Revenue Office Drafting Assistant
+  <br>
+  Gemini PDF/OCR + OpenAI Drafting
 
 </footer>
 
 
+<!-- LOADING -->
+
+<div
+  id="loading"
+  class="loading">
+
+  <div class="loading-card">
+
+    <div class="spinner"></div>
+
+    <strong id="loadingText">
+      Processing...
+    </strong>
+
+  </div>
+
+</div>
+
+
+<div id="toast"></div>
+
+
 <script>
 
+  // =====================================================
+  // STATE
+  // =====================================================
 
-// ============================================================
-// IMPORTANT: RENDER BACKEND URL
-// ============================================================
-//
-// Replace this with your actual Render backend URL.
-//
-// Example:
-// https://revenue-office-drafting.onrender.com
-//
-// DO NOT add /api here.
-//
+  let currentTab = "letter";
 
-const API_BASE_URL =
-  "https://YOUR-RENDER-BACKEND.onrender.com";
+  let currentLetter = "";
+
+  let currentNoteFile = "";
+
+  let currentKeyPoints = [];
+
+  let originalSourceText = "";
 
 
-// ============================================================
-// APPLICATION STATE
-// ============================================================
+  // =====================================================
+  // ELEMENTS
+  // =====================================================
 
-let originalSourceText = "";
-
-let currentLetter = "";
-
-let currentNoteFile = "";
-
-let currentKeyPoints = [];
-
-let currentTab = "letter";
+  const $ = (id) =>
+    document.getElementById(id);
 
 
-// ============================================================
-// DOM HELPERS
-// ============================================================
+  // =====================================================
+  // API
+  // =====================================================
 
-function $(id) {
-
-  return document.getElementById(id);
-
-}
-
-
-// ============================================================
-// STATUS
-// ============================================================
-
-function setStatus(
-  elementId,
-  message,
-  type = ""
-) {
-
-  const element =
-    $(elementId);
-
-  if (!element) return;
-
-  element.className =
-    "status " + type;
-
-  element.innerHTML =
-    message;
-
-}
-
-
-// ============================================================
-// SERVER HEALTH
-// ============================================================
-
-async function checkServer() {
-
-  try {
+  async function apiRequest(
+    url,
+    options = {}
+  ) {
 
     const response =
-      await fetch(
-        `${API_BASE_URL}/api/health`
-      );
+      await fetch(url, options);
 
+    let data = null;
 
-    const data =
-      await response.json();
-
-
-    if (
-      response.ok &&
-      data.success
-    ) {
-
-      setStatus(
-        "serverStatus",
-
-        `🟢 Server Online | Gemini: ${
-          data.geminiConfigured
-            ? "Configured"
-            : "Not Configured"
-        } | Model: ${data.model}`,
-
-        "success"
-      );
-
-    } else {
+    try {
+      data =
+        await response.json();
+    } catch (error) {
 
       throw new Error(
-        data.error ||
-        "Server unavailable"
+        "Server returned an invalid response."
       );
 
     }
 
+    if (!response.ok ||
+        data.success === false) {
 
-  } catch (error) {
+      throw new Error(
+        data.message ||
+        "Request failed."
+      );
 
-    setStatus(
-      "serverStatus",
+    }
 
-      "🔴 Server connection failed: " +
-      error.message,
-
-      "error"
-    );
-
+    return data;
   }
 
-}
 
+  // =====================================================
+  // LOADING
+  // =====================================================
 
-// ============================================================
-// PASTE
-// ============================================================
+  function showLoading(message) {
 
-async function pasteSource() {
+    $("loadingText").textContent =
+      message || "Processing...";
 
-  try {
-
-    const text =
-      await navigator.clipboard.readText();
-
-    $("sourceText").value =
-      text;
-
-    originalSourceText =
-      text;
-
-  } catch (error) {
-
-    alert(
-      "Clipboard access failed. Please paste manually."
-    );
-
-  }
-
-}
-
-
-// ============================================================
-// CLEAR SOURCE
-// ============================================================
-
-function clearSource() {
-
-  $("sourceText").value =
-    "";
-
-  originalSourceText =
-    "";
-
-}
-
-
-// ============================================================
-// CLEAR ALL
-// ============================================================
-
-function clearAll() {
-
-  $("sourceText").value = "";
-
-  $("workCommand").value = "";
-
-  $("recipient").value = "";
-
-  $("subject").value = "";
-
-  $("alterCommand").value = "";
-
-  $("pdfFile").value = "";
-
-  $("letterOutput").textContent =
-    "Letter will appear here...";
-
-  $("noteOutput").textContent =
-    "Note File will appear here...";
-
-  $("keyPoints").innerHTML =
-    "<li>No generated points yet.</li>";
-
-  currentLetter = "";
-
-  currentNoteFile = "";
-
-  currentKeyPoints = [];
-
-  originalSourceText = "";
-
-  setStatus(
-    "generateStatus",
-    ""
-  );
-
-  setStatus(
-    "continueStatus",
-    ""
-  );
-
-  setStatus(
-    "pdfStatus",
-    ""
-  );
-
-}
-
-
-// ============================================================
-// PDF UPLOAD
-// ============================================================
-
-async function uploadPDF() {
-
-  const file =
-    $("pdfFile").files[0];
-
-
-  if (!file) {
-
-    alert(
-      "Please select a PDF file."
-    );
-
-    return;
+    $("loading")
+      .classList
+      .add("show");
 
   }
 
 
-  if (
-    file.type !==
-    "application/pdf"
-  ) {
+  function hideLoading() {
 
-    alert(
-      "Please select a PDF file."
-    );
-
-    return;
+    $("loading")
+      .classList
+      .remove("show");
 
   }
 
 
-  const button =
-    $("pdfButton");
+  // =====================================================
+  // TOAST
+  // =====================================================
+
+  function toast(message) {
+
+    const element =
+      $("toast");
+
+    element.textContent =
+      message;
+
+    element.style.display =
+      "block";
+
+    setTimeout(() => {
+
+      element.style.display =
+        "none";
+
+    }, 3500);
+
+  }
 
 
-  button.disabled =
-    true;
+  // =====================================================
+  // HEALTH
+  // =====================================================
 
-  button.innerHTML =
-    `<span class="spinner"></span>Converting PDF...`;
+  async function checkHealth() {
+
+    try {
+
+      const data =
+        await apiRequest(
+          "/api/health"
+        );
+
+      $("statusDot")
+        .style.background =
+        "#27ae60";
+
+      $("statusText")
+        .textContent =
+        "Online";
 
 
-  setStatus(
-    "pdfStatus",
+      $("systemInfo").innerHTML = `
 
-    "📄 Sending PDF to Gemini for text extraction...",
+        <div>
+          <strong>Server:</strong>
+          Online
+        </div>
 
-    "loading"
-  );
+        <div>
+          <strong>Gemini PDF/OCR:</strong>
+          ${data.geminiConfigured ? "Configured" : "Not configured"}
+        </div>
+
+        <div>
+          <strong>Gemini Model:</strong>
+          ${data.geminiModel}
+        </div>
+
+        <div>
+          <strong>OpenAI Drafting:</strong>
+          ${data.openaiConfigured ? "Configured" : "Not configured"}
+        </div>
+
+        <div>
+          <strong>OpenAI Model:</strong>
+          ${data.openaiModel}
+        </div>
+
+        <div>
+          <strong>Architecture:</strong>
+          PDF → Gemini → OpenAI → Letter + Note File
+        </div>
+
+      `;
+
+    } catch (error) {
+
+      $("statusDot")
+        .style.background =
+        "#d92d20";
+
+      $("statusText")
+        .textContent =
+        "Offline";
+
+      $("systemInfo").textContent =
+        error.message;
+
+    }
+
+  }
 
 
-  try {
+  // =====================================================
+  // PDF EXTRACTION
+  // =====================================================
+
+  async function extractPDF() {
+
+    const file =
+      $("pdfFile").files[0];
+
+    if (!file) {
+
+      toast(
+        "Please select a PDF file."
+      );
+
+      return;
+    }
+
+
+    if (
+      file.type !== "application/pdf" &&
+      !file.name
+        .toLowerCase()
+        .endsWith(".pdf")
+    ) {
+
+      toast(
+        "Please select a PDF file."
+      );
+
+      return;
+    }
+
 
     const formData =
       new FormData();
-
 
     formData.append(
       "pdf",
@@ -1512,906 +1183,733 @@ async function uploadPDF() {
     );
 
 
-    const response =
-      await fetch(
-        `${API_BASE_URL}/api/pdf-to-text`,
-        {
-          method: "POST",
-          body: formData
-        }
+    try {
+
+      showLoading(
+        "Gemini is reading the PDF / OCR..."
+      );
+
+      $("pdfStatus").textContent =
+        "Uploading PDF to Gemini...";
+
+
+      const data =
+        await apiRequest(
+          "/api/pdf-to-text",
+          {
+            method: "POST",
+            body: formData
+          }
+        );
+
+
+      $("sourceText").value =
+        data.text;
+
+      originalSourceText =
+        data.text;
+
+
+      $("pdfStatus").textContent =
+        `Extraction completed. ${data.characterCount} characters extracted.`;
+
+
+      toast(
+        "PDF text extracted successfully."
+      );
+
+    } catch (error) {
+
+      $("pdfStatus").textContent =
+        "";
+
+      toast(
+        error.message
+      );
+
+    } finally {
+
+      hideLoading();
+
+    }
+
+  }
+
+
+  // =====================================================
+  // GENERATE
+  // =====================================================
+
+  async function generateDraft() {
+
+    const sourceText =
+      $("sourceText")
+        .value
+        .trim();
+
+    const workCommand =
+      $("workCommand")
+        .value
+        .trim();
+
+    const language =
+      $("language")
+        .value;
+
+    const recipient =
+      $("recipient")
+        .value
+        .trim();
+
+    const subject =
+      $("subject")
+        .value
+        .trim();
+
+
+    if (!sourceText) {
+
+      toast(
+        "Please enter Source / Received Text or upload a PDF."
+      );
+
+      return;
+    }
+
+
+    if (!workCommand) {
+
+      toast(
+        "Please enter Work / Command."
+      );
+
+      return;
+    }
+
+
+    originalSourceText =
+      sourceText;
+
+
+    try {
+
+      showLoading(
+        "OpenAI is preparing the official Letter and Note File..."
       );
 
 
-    const data =
-      await response.json();
+      const data =
+        await apiRequest(
+          "/api/generate",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+                sourceText,
+                workCommand,
+                language,
+                recipient,
+                subject
+              })
+          }
+        );
 
 
-    if (!response.ok || !data.success) {
+      currentLetter =
+        data.letter || "";
 
-      throw new Error(
-        data.error ||
-        "PDF conversion failed."
+      currentNoteFile =
+        data.note_file || "";
+
+      currentKeyPoints =
+        data.key_points || [];
+
+
+      renderKeyPoints();
+
+      showTab("letter");
+
+
+      toast(
+        "Letter and Note File generated successfully."
+      );
+
+    } catch (error) {
+
+      toast(
+        error.message
+      );
+
+    } finally {
+
+      hideLoading();
+
+    }
+
+  }
+
+
+  // =====================================================
+  // CONTINUE / ALTER
+  // =====================================================
+
+  async function continueDraft() {
+
+    const alterCommand =
+      $("alterCommand")
+        .value
+        .trim();
+
+
+    if (!originalSourceText) {
+
+      toast(
+        "Please generate the first draft before using Continue / Alter."
+      );
+
+      return;
+    }
+
+
+    if (!currentLetter ||
+        !currentNoteFile) {
+
+      toast(
+        "Previous Letter / Note File is not available."
+      );
+
+      return;
+    }
+
+
+    if (!alterCommand) {
+
+      toast(
+        "Please enter the Continue / Alter Command."
+      );
+
+      return;
+    }
+
+
+    try {
+
+      showLoading(
+        "OpenAI is revising the Letter and Note File..."
+      );
+
+
+      const data =
+        await apiRequest(
+          "/api/continue",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+
+                sourceText:
+                  originalSourceText,
+
+                previousLetter:
+                  currentLetter,
+
+                previousNoteFile:
+                  currentNoteFile,
+
+                alterCommand,
+
+                language:
+                  $("language").value,
+
+                recipient:
+                  $("recipient").value.trim(),
+
+                subject:
+                  $("subject").value.trim()
+
+              })
+          }
+        );
+
+
+      currentLetter =
+        data.letter || "";
+
+      currentNoteFile =
+        data.note_file || "";
+
+      currentKeyPoints =
+        data.key_points || [];
+
+
+      renderKeyPoints();
+
+      showTab("letter");
+
+
+      $("alterCommand")
+        .value = "";
+
+
+      toast(
+        "Draft revised successfully."
+      );
+
+    } catch (error) {
+
+      toast(
+        error.message
+      );
+
+    } finally {
+
+      hideLoading();
+
+    }
+
+  }
+
+
+  // =====================================================
+  // TABS
+  // =====================================================
+
+  function showTab(tab) {
+
+    currentTab =
+      tab;
+
+
+    $("letterTab")
+      .classList
+      .remove("active");
+
+    $("noteTab")
+      .classList
+      .remove("active");
+
+
+    if (tab === "letter") {
+
+      $("letterTab")
+        .classList
+        .add("active");
+
+      $("output").textContent =
+        currentLetter ||
+        "Letter will appear here.";
+
+    } else {
+
+      $("noteTab")
+        .classList
+        .add("active");
+
+      $("output").textContent =
+        currentNoteFile ||
+        "Note File will appear here.";
+
+    }
+
+  }
+
+
+  // =====================================================
+  // KEY POINTS
+  // =====================================================
+
+  function renderKeyPoints() {
+
+    const box =
+      $("keyPoints");
+
+    if (!currentKeyPoints.length) {
+
+      box.style.display =
+        "none";
+
+      return;
+    }
+
+
+    box.style.display =
+      "block";
+
+
+    box.innerHTML = `
+
+      <strong>
+        Key Points
+      </strong>
+
+      <ul>
+        ${currentKeyPoints
+          .map(
+            point =>
+              `<li>${escapeHtml(point)}</li>`
+          )
+          .join("")}
+      </ul>
+
+    `;
+
+  }
+
+
+  // =====================================================
+  // COPY
+  // =====================================================
+
+  async function copyOutput() {
+
+    const text =
+      currentTab === "letter"
+        ? currentLetter
+        : currentNoteFile;
+
+
+    if (!text) {
+
+      toast(
+        "There is no output to copy."
+      );
+
+      return;
+    }
+
+
+    try {
+
+      await navigator.clipboard
+        .writeText(text);
+
+      toast(
+        "Copied to clipboard."
+      );
+
+    } catch (error) {
+
+      toast(
+        "Copy failed."
       );
 
     }
 
+  }
+
+
+  // =====================================================
+  // WORD DOWNLOAD
+  // =====================================================
+
+  async function downloadWord() {
+
+    if (!currentLetter ||
+        !currentNoteFile) {
+
+      toast(
+        "Generate the Letter and Note File first."
+      );
+
+      return;
+    }
+
+
+    try {
+
+      showLoading(
+        "Creating Word document..."
+      );
+
+
+      const response =
+        await fetch(
+          "/api/download-word",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+                letter:
+                  currentLetter,
+
+                noteFile:
+                  currentNoteFile
+              })
+          }
+        );
+
+
+      if (!response.ok) {
+
+        let message =
+          "Word download failed.";
+
+        try {
+
+          const data =
+            await response.json();
+
+          message =
+            data.message ||
+            message;
+
+        } catch (e) {}
+
+        throw new Error(
+          message
+        );
+
+      }
+
+
+      const blob =
+        await response.blob();
+
+
+      const url =
+        window.URL.createObjectURL(
+          blob
+        );
+
+
+      const link =
+        document.createElement("a");
+
+      link.href =
+        url;
+
+      link.download =
+        "Revenue_Draft.docx";
+
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+
+      link.remove();
+
+
+      window.URL.revokeObjectURL(
+        url
+      );
+
+
+      toast(
+        "Word document created."
+      );
+
+    } catch (error) {
+
+      toast(
+        error.message
+      );
+
+    } finally {
+
+      hideLoading();
+
+    }
+
+  }
+
+
+  // =====================================================
+  // PRINT
+  // =====================================================
+
+  function printOutput() {
+
+    const text =
+      currentTab === "letter"
+        ? currentLetter
+        : currentNoteFile;
+
+
+    if (!text) {
+
+      toast(
+        "There is no output to print."
+      );
+
+      return;
+    }
+
+
+    const printWindow =
+      window.open(
+        "",
+        "_blank"
+      );
+
+
+    printWindow.document.write(`
+
+      <!DOCTYPE html>
+
+      <html>
+
+      <head>
+
+        <title>
+          Revenue Office Draft
+        </title>
+
+        <style>
+
+          body {
+            font-family:
+              Georgia,
+              "Times New Roman",
+              serif;
+
+            font-size:
+              15px;
+
+            line-height:
+              1.7;
+
+            padding:
+              30px;
+
+            white-space:
+              pre-wrap;
+          }
+
+        </style>
+
+      </head>
+
+      <body>
+
+        ${escapeHtml(text)}
+
+      </body>
+
+      </html>
+
+    `);
+
+
+    printWindow.document.close();
+
+    printWindow.focus();
+
+    setTimeout(() => {
+
+      printWindow.print();
+
+    }, 300);
+
+  }
+
+
+  // =====================================================
+  // CLEAR
+  // =====================================================
+
+  function clearAll() {
 
     $("sourceText").value =
-      data.text;
+      "";
 
-
-    originalSourceText =
-      data.text;
-
-
-    setStatus(
-
-      "pdfStatus",
-
-      `✅ PDF converted successfully. ${
-        data.characters
-      } characters extracted.`,
-
-      "success"
-
-    );
-
-
-    // Scroll to source
-    $("sourceText").scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-
-
-  } catch (error) {
-
-    console.error(error);
-
-
-    setStatus(
-
-      "pdfStatus",
-
-      "❌ " + error.message,
-
-      "error"
-
-    );
-
-  } finally {
-
-    button.disabled =
-      false;
-
-    button.innerHTML =
-      "Upload PDF & Convert to Text";
-
-  }
-
-}
-
-
-// ============================================================
-// GENERATE DRAFT
-// ============================================================
-
-async function generateDraft() {
-
-  const sourceText =
-    $("sourceText").value.trim();
-
-  const workCommand =
-    $("workCommand").value.trim();
-
-  const language =
-    $("language").value;
-
-  const recipient =
-    $("recipient").value.trim();
-
-  const subject =
-    $("subject").value.trim();
-
-
-  if (!sourceText) {
-
-    alert(
-      "Please enter Source / Received Text or upload a PDF."
-    );
-
-    return;
-
-  }
-
-
-  if (!workCommand) {
-
-    alert(
-      "Please enter Work / Command."
-    );
-
-    return;
-
-  }
-
-
-  originalSourceText =
-    sourceText;
-
-
-  const button =
-    $("generateButton");
-
-
-  button.disabled =
-    true;
-
-  button.innerHTML =
-    `<span class="spinner"></span>Generating...`;
-
-
-  setStatus(
-
-    "generateStatus",
-
-    "🤖 Gemini is preparing the Letter and Note File...",
-
-    "loading"
-
-  );
-
-
-  try {
-
-    const response =
-      await fetch(
-        `${API_BASE_URL}/api/generate`,
-        {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              sourceText,
-
-              workCommand,
-
-              language,
-
-              recipient,
-
-              subject
-
-            })
-
-        }
-      );
-
-
-    const data =
-      await response.json();
-
-
-    if (
-      !response.ok ||
-      !data.success
-    ) {
-
-      throw new Error(
-        data.error ||
-        "Draft generation failed."
-      );
-
-    }
-
-
-    currentLetter =
-      data.letter || "";
-
-    currentNoteFile =
-      data.note_file || "";
-
-    currentKeyPoints =
-      Array.isArray(
-        data.key_points
-      )
-        ? data.key_points
-        : [];
-
-
-    $("letterOutput").textContent =
-      currentLetter;
-
-    $("noteOutput").textContent =
-      currentNoteFile;
-
-
-    renderKeyPoints();
-
-
-    showTab("letter");
-
-
-    setStatus(
-
-      "generateStatus",
-
-      "✅ Letter and Note File generated successfully.",
-
-      "success"
-
-    );
-
-
-  } catch (error) {
-
-    console.error(error);
-
-
-    setStatus(
-
-      "generateStatus",
-
-      "❌ " + error.message,
-
-      "error"
-
-    );
-
-  } finally {
-
-    button.disabled =
-      false;
-
-    button.innerHTML =
-      "Generate Letter + Note File";
-
-  }
-
-}
-
-
-// ============================================================
-// CONTINUE / ALTER
-// ============================================================
-
-async function continueDraft() {
-
-  if (!originalSourceText) {
-
-    originalSourceText =
-      $("sourceText").value.trim();
-
-  }
-
-
-  const alterCommand =
-    $("alterCommand").value.trim();
-
-
-  if (!originalSourceText) {
-
-    alert(
-      "Original Source Text is missing."
-    );
-
-    return;
-
-  }
-
-
-  if (!currentLetter) {
-
-    alert(
-      "Please generate the original draft first."
-    );
-
-    return;
-
-  }
-
-
-  if (!alterCommand) {
-
-    alert(
-      "Please enter Continue / Alter Command."
-    );
-
-    return;
-
-  }
-
-
-  const button =
-    $("continueButton");
-
-
-  button.disabled =
-    true;
-
-  button.innerHTML =
-    `<span class="spinner"></span>Revising...`;
-
-
-  setStatus(
-
-    "continueStatus",
-
-    "🔄 Revising the existing Letter and Note File...",
-
-    "loading"
-
-  );
-
-
-  try {
-
-    const response =
-      await fetch(
-        `${API_BASE_URL}/api/continue`,
-        {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              sourceText:
-                originalSourceText,
-
-              previousLetter:
-                currentLetter,
-
-              previousNoteFile:
-                currentNoteFile,
-
-              alterCommand,
-
-              language:
-                $("language").value,
-
-              recipient:
-                $("recipient").value.trim(),
-
-              subject:
-                $("subject").value.trim()
-
-            })
-
-        }
-      );
-
-
-    const data =
-      await response.json();
-
-
-    if (
-      !response.ok ||
-      !data.success
-    ) {
-
-      throw new Error(
-        data.error ||
-        "Revision failed."
-      );
-
-    }
-
-
-    currentLetter =
-      data.letter || "";
-
-    currentNoteFile =
-      data.note_file || "";
-
-    currentKeyPoints =
-      Array.isArray(
-        data.key_points
-      )
-        ? data.key_points
-        : [];
-
-
-    $("letterOutput").textContent =
-      currentLetter;
-
-    $("noteOutput").textContent =
-      currentNoteFile;
-
-
-    renderKeyPoints();
-
-
-    showTab("letter");
-
-
-    setStatus(
-
-      "continueStatus",
-
-      "✅ Draft revised successfully.",
-
-      "success"
-
-    );
-
+    $("workCommand").value =
+      "";
 
     $("alterCommand").value =
       "";
 
+    $("recipient").value =
+      "";
 
-  } catch (error) {
+    $("subject").value =
+      "";
 
-    console.error(error);
+    $("pdfFile").value =
+      "";
 
+    $("pdfStatus").textContent =
+      "";
 
-    setStatus(
+    currentLetter =
+      "";
 
-      "continueStatus",
+    currentNoteFile =
+      "";
 
-      "❌ " + error.message,
+    currentKeyPoints =
+      [];
 
-      "error"
+    originalSourceText =
+      "";
 
-    );
-
-  } finally {
-
-    button.disabled =
-      false;
-
-    button.innerHTML =
-      "Continue / Alter Draft";
-
-  }
-
-}
-
-
-// ============================================================
-// TABS
-// ============================================================
-
-function showTab(tab) {
-
-  currentTab =
-    tab;
-
-
-  const letterOutput =
-    $("letterOutput");
-
-  const noteOutput =
-    $("noteOutput");
-
-
-  const letterTab =
-    $("letterTab");
-
-  const noteTab =
-    $("noteTab");
-
-
-  if (tab === "letter") {
-
-    letterOutput.style.display =
-      "block";
-
-    noteOutput.style.display =
+    $("keyPoints").style.display =
       "none";
 
-    letterTab.classList.add(
-      "active"
-    );
+    showTab("letter");
 
-    noteTab.classList.remove(
-      "active"
-    );
-
-  } else {
-
-    letterOutput.style.display =
-      "none";
-
-    noteOutput.style.display =
-      "block";
-
-    letterTab.classList.remove(
-      "active"
-    );
-
-    noteTab.classList.add(
-      "active"
+    toast(
+      "Form cleared."
     );
 
   }
 
-}
 
+  // =====================================================
+  // ESCAPE HTML
+  // =====================================================
 
-// ============================================================
-// COPY
-// ============================================================
+  function escapeHtml(value) {
 
-async function copyCurrentOutput() {
-
-  const text =
-    currentTab === "letter"
-      ? currentLetter
-      : currentNoteFile;
-
-
-  if (!text) {
-
-    alert(
-      "No output available."
-    );
-
-    return;
-
-  }
-
-
-  try {
-
-    await navigator.clipboard.writeText(
-      text
-    );
-
-
-    alert(
-      "Copied successfully."
-    );
-
-
-  } catch (error) {
-
-    alert(
-      "Copy failed."
-    );
-
-  }
-
-}
-
-
-// ============================================================
-// DOWNLOAD WORD
-// ============================================================
-
-async function downloadWord() {
-
-  if (!currentLetter) {
-
-    alert(
-      "Please generate the Letter first."
-    );
-
-    return;
-
-  }
-
-
-  if (!currentNoteFile) {
-
-    alert(
-      "Please generate the Note File first."
-    );
-
-    return;
-
-  }
-
-
-  try {
-
-    const response =
-      await fetch(
-        `${API_BASE_URL}/api/download-word`,
-        {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              letter:
-                currentLetter,
-
-              note_file:
-                currentNoteFile
-
-            })
-
-        }
-      );
-
-
-    if (!response.ok) {
-
-      const errorData =
-        await response.json()
-          .catch(() => null);
-
-
-      throw new Error(
-        errorData?.error ||
-        "Word download failed."
-      );
-
-    }
-
-
-    const blob =
-      await response.blob();
-
-
-    const url =
-      window.URL.createObjectURL(
-        blob
-      );
-
-
-    const a =
-      document.createElement(
-        "a"
-      );
-
-
-    a.href =
-      url;
-
-    a.download =
-      "Revenue_Drafting_Output.docx";
-
-
-    document.body.appendChild(a);
-
-    a.click();
-
-    a.remove();
-
-
-    window.URL.revokeObjectURL(
-      url
-    );
-
-
-  } catch (error) {
-
-    alert(
-      error.message
-    );
-
-  }
-
-}
-
-
-// ============================================================
-// PRINT
-// ============================================================
-
-function printCurrentOutput() {
-
-  const text =
-    currentTab === "letter"
-      ? currentLetter
-      : currentNoteFile;
-
-
-  if (!text) {
-
-    alert(
-      "No output available."
-    );
-
-    return;
-
-  }
-
-
-  const printWindow =
-    window.open(
-      "",
-      "_blank"
-    );
-
-
-  printWindow.document.write(`
-
-    <!DOCTYPE html>
-
-    <html>
-
-    <head>
-
-      <meta charset="UTF-8">
-
-      <title>
-        Revenue Office Draft
-      </title>
-
-      <style>
-
-        body {
-
-          font-family:
-            "Noto Sans",
-            "Latha",
-            Arial,
-            sans-serif;
-
-          margin:
-            35px;
-
-          font-size:
-            14px;
-
-          line-height:
-            1.7;
-
-          white-space:
-            pre-wrap;
-
-        }
-
-      </style>
-
-    </head>
-
-    <body>
-
-      ${escapeHtml(text)}
-
-    </body>
-
-    </html>
-
-  `);
-
-
-  printWindow.document.close();
-
-  printWindow.focus();
-
-  printWindow.print();
-
-}
-
-
-// ============================================================
-// ESCAPE HTML
-// ============================================================
-
-function escapeHtml(text) {
-
-  return text
-
-    .replace(/&/g, "&amp;")
-
-    .replace(/</g, "&lt;")
-
-    .replace(/>/g, "&gt;")
-
-    .replace(/"/g, "&quot;")
-
-    .replace(/'/g, "&#039;");
-
-}
-
-
-// ============================================================
-// KEY POINTS
-// ============================================================
-
-function renderKeyPoints() {
-
-  const list =
-    $("keyPoints");
-
-
-  if (
-    !currentKeyPoints.length
-  ) {
-
-    list.innerHTML =
-      "<li>No key points available.</li>";
-
-    return;
-
-  }
-
-
-  list.innerHTML =
-    currentKeyPoints
-      .map(
-        point =>
-          `<li>${escapeHtml(
-            String(point)
-          )}</li>`
+    return String(value)
+      .replace(
+        /&/g,
+        "&amp;"
       )
-      .join("");
-
-}
-
-
-// ============================================================
-// EXAMPLE
-// ============================================================
-
-function loadExample() {
-
-  $("sourceText").value = `
-A representation has been received from the petitioner
-stating that a pathway leading to his agricultural land
-has been obstructed.
-
-The petitioner has requested that necessary action may
-be taken to restore access to the land.
-
-The representation is submitted for appropriate action.
-`.trim();
-
-
-  $("workCommand").value = `
-Prepare an official letter to the Tahsildar directing
-necessary field inspection and verification of revenue
-records. Obtain a report and submit the Action Taken
-Report within 7 days.
-
-Also prepare the corresponding office note for approval.
-`.trim();
-
-
-  $("language").value =
-    "English";
-
-
-  $("recipient").value =
-    "The Tahsildar, [Taluk]";
-
-
-  $("subject").value =
-    "Petition regarding obstruction of pathway – Necessary action – Requested";
-
-
-  originalSourceText =
-    $("sourceText").value;
-
-}
-
-
-// ============================================================
-// INITIALIZATION
-// ============================================================
-
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
-
-    checkServer();
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
 
   }
-);
+
+
+  // =====================================================
+  // START
+  // =====================================================
+
+  checkHealth();
 
 </script>
 
