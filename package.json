@@ -8,8 +8,8 @@
     "dev": "node server.js"
   },
   "engines": {
-    "node": ">=20"
-  },
+  "node": "22.23.2"
+},
   "dependencies": {
     "@google/genai": "^1.0.0",
     "cors": "^2.8.5",
