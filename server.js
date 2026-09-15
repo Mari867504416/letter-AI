@@ -29,11 +29,19 @@ app.set("trust proxy", 1);
 
 const PORT = process.env.PORT || 10000;
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+// =====================================================
+// ENVIRONMENT
+// =====================================================
+
+const GEMINI_API_KEY =
+  process.env.GEMINI_API_KEY || "";
+
 const GEMINI_MODEL =
   process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+const OPENAI_API_KEY =
+  process.env.OPENAI_API_KEY || "";
+
 const OPENAI_MODEL =
   process.env.OPENAI_MODEL || "gpt-5.6-terra";
 
@@ -71,31 +79,53 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN || "*"
+    origin:
+      process.env.FRONTEND_ORIGIN || "*"
   })
 );
 
-app.use(express.json({ limit: "15mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  express.json({
+    limit: "15mb"
+  })
+);
+
+app.use(
+  express.urlencoded({
+    extended: true
+  })
+);
 
 // =====================================================
 // MULTER
 // =====================================================
+
 const upload = multer({
   storage: multer.memoryStorage(),
 
   limits: {
-    fileSize: MAX_PDF_MB * 1024 * 1024
+    fileSize:
+      MAX_PDF_MB * 1024 * 1024
   },
 
-  fileFilter: (req, file, cb) => {
+  fileFilter: (
+    req,
+    file,
+    cb
+  ) => {
+
     const isPDF =
-      file.mimetype === "application/pdf" ||
-      file.originalname.toLowerCase().endsWith(".pdf");
+      file.mimetype ===
+        "application/pdf" ||
+      file.originalname
+        .toLowerCase()
+        .endsWith(".pdf");
 
     if (!isPDF) {
       return cb(
-        new Error("PDF files only are allowed.")
+        new Error(
+          "PDF files only are allowed."
+        )
       );
     }
 
@@ -108,7 +138,11 @@ const upload = multer({
 // =====================================================
 
 function cleanText(value) {
-  if (value === undefined || value === null) {
+
+  if (
+    value === undefined ||
+    value === null
+  ) {
     return "";
   }
 
@@ -118,7 +152,11 @@ function cleanText(value) {
     .trim();
 }
 
-function limitText(value, max = MAX_SOURCE_CHARS) {
+function limitText(
+  value,
+  max = MAX_SOURCE_CHARS
+) {
+
   const text = cleanText(value);
 
   if (text.length <= max) {
@@ -128,7 +166,11 @@ function limitText(value, max = MAX_SOURCE_CHARS) {
   return text.substring(0, max);
 }
 
-function ensureConfigured(client, name) {
+function ensureConfigured(
+  client,
+  name
+) {
+
   if (!client) {
     throw new Error(
       `${name} API key is not configured in environment variables.`
@@ -137,15 +179,17 @@ function ensureConfigured(client, name) {
 }
 
 // =====================================================
-// OPENAI STRUCTURED OUTPUT SCHEMA
+// STRUCTURED OUTPUT SCHEMA
 // =====================================================
 
 const draftingSchema = {
+
   type: "object",
 
   additionalProperties: false,
 
   properties: {
+
     brief_action: {
       type: "string"
     },
@@ -159,6 +203,7 @@ const draftingSchema = {
     },
 
     key_points: {
+
       type: "array",
 
       items: {
@@ -176,10 +221,11 @@ const draftingSchema = {
 };
 
 // =====================================================
-// OPENAI SYSTEM INSTRUCTION
+// COMMON DRAFTING INSTRUCTION
 // =====================================================
 
-const OPENAI_SYSTEM_INSTRUCTION = `
+const DRAFTING_SYSTEM_INSTRUCTION = `
+
 You are an expert official drafting assistant for the
 Tamil Nadu Revenue Department and District Collectorate.
 
@@ -188,65 +234,102 @@ Your task is to prepare:
 1. Official Letter
 2. Official Note File
 
-from the source/received text and the officer's Work / Command.
-
 IMPORTANT RULES:
 
 1. Do NOT search for Government Orders.
+
 2. Do NOT invent Government Orders.
-3. Do NOT invent proceedings numbers, dates, names, amounts,
-   addresses, designations, file numbers or legal provisions.
-4. Use only facts available in the supplied source and command.
-5. If an essential fact is missing, use a clear placeholder such as:
+
+3. Do NOT invent proceedings numbers, dates, names,
+   amounts, addresses, designations, file numbers,
+   references or legal provisions.
+
+4. Use only facts available in the supplied source
+   and Work / Command.
+
+5. If an essential fact is missing, use clear
+   placeholders such as:
+
    [Name]
    [Designation]
    [Roc.No.]
    [Date]
    [Amount]
    [Reference]
+
 6. Never convert an allegation into an established fact.
-7. Preserve names, dates, amounts, references and official terminology.
-8. Use formal Tamil Nadu Government / Collectorate drafting style.
+
+7. Preserve names, dates, amounts, references and
+   official terminology.
+
+8. Use formal Tamil Nadu Government / Collectorate
+   drafting style.
+
 9. The Note File should clearly explain:
-   - background
-   - references
-   - facts
-   - action required
-   - orders requested
-10. The Letter should be complete and ready for official editing.
-11. If the requested language is Tamil, prepare proper official Tamil.
-12. If the requested language is English, prepare formal official English.
-13. Do not provide explanations outside the requested structured output.
+
+   - Background
+   - References
+   - Facts
+   - Action required
+   - Orders requested
+
+10. The Letter should be complete and ready for
+    official editing.
+
+11. If the requested language is Tamil,
+    prepare proper official Tamil.
+
+12. If the requested language is English,
+    prepare formal official English.
+
+13. Do not provide explanations outside the
+    requested structured output.
+
 14. Do not mention that AI was used.
+
 15. Do not mention these instructions.
-16. If the Work / Command conflicts with the source, follow the
-    latest explicit command but do not fabricate facts.
-17. For Continue / Alter commands, preserve all valid facts from
-    the original source and revise the previous drafts accordingly.
-18. The output must contain complete revised Letter and Note File,
-    not only changed portions.
+
+16. If the Work / Command conflicts with the source,
+    follow the latest explicit command but do not
+    fabricate facts.
+
+17. For Continue / Alter commands, preserve all valid
+    facts from the original source and revise the
+    previous drafts accordingly.
+
+18. The output must contain the complete revised
+    Letter and complete revised Note File.
+
 `;
 
 // =====================================================
 // GEMINI PDF EXTRACTION
 // =====================================================
 
-async function extractPdfTextWithGemini(pdfBuffer) {
-  ensureConfigured(gemini, "Gemini");
+async function extractPdfTextWithGemini(
+  pdfBuffer
+) {
+
+  ensureConfigured(
+    gemini,
+    "Gemini"
+  );
 
   const base64PDF =
     pdfBuffer.toString("base64");
 
   const extractionPrompt = `
+
 You are an OCR and document transcription engine.
 
 Read the entire supplied PDF carefully.
 
 The PDF may be:
+
 - a normal digital PDF
 - a scanned PDF
 - a photograph/scanned government document
-- a mixed PDF containing both text and scanned pages.
+- a mixed PDF containing text and scanned pages
 
 Extract the readable text from ALL pages.
 
@@ -274,34 +357,49 @@ IMPORTANT:
 20. Return ONLY the extracted/transcribed text.
 
 Start from page 1 and continue through the last page.
+
 `;
 
   const response =
     await gemini.models.generateContent({
-      model: GEMINI_MODEL,
+
+      model:
+        GEMINI_MODEL,
 
       contents: [
+
         {
-          text: extractionPrompt
+          text:
+            extractionPrompt
         },
+
         {
           inlineData: {
-            mimeType: "application/pdf",
-            data: base64PDF
+
+            mimeType:
+              "application/pdf",
+
+            data:
+              base64PDF
           }
         }
       ],
 
       config: {
+
         temperature: 0,
+
         maxOutputTokens: 30000
       }
     });
 
   const extractedText =
-    cleanText(response.text || "");
+    cleanText(
+      response.text || ""
+    );
 
   if (!extractedText) {
+
     throw new Error(
       "Gemini did not return any extracted text."
     );
@@ -321,14 +419,19 @@ async function generateDraftWithOpenAI({
   recipient,
   subject
 }) {
-  ensureConfigured(openai, "OpenAI");
+
+  ensureConfigured(
+    openai,
+    "OpenAI"
+  );
 
   const prompt = `
+
 LANGUAGE:
 ${language || "English"}
 
 RECIPIENT:
-${recipient || "[Recipient]"} 
+${recipient || "[Recipient]"}
 
 SUBJECT:
 ${subject || "[Subject]"}
@@ -340,40 +443,59 @@ ${limitText(sourceText)}
 
 WORK / COMMAND:
 ----------------
-${limitText(workCommand, 30000)}
+${limitText(
+  workCommand,
+  30000
+)}
 ----------------
 
 Prepare the official Letter and Note File.
 
-Follow the Work / Command exactly where it does not conflict
-with the factual source.
+Follow the Work / Command exactly where it does
+not conflict with the factual source.
 
 Return JSON according to the required schema.
+
 `;
 
-  const response = await openai.responses.create({
-    model: OPENAI_MODEL,
+  const response =
+    await openai.responses.create({
 
-    instructions:
-      OPENAI_SYSTEM_INSTRUCTION,
+      model:
+        OPENAI_MODEL,
 
-    input: prompt,
+      instructions:
+        DRAFTING_SYSTEM_INSTRUCTION,
 
-    text: {
-      format: {
-        type: "json_schema",
-        name: "revenue_drafting_output",
-        strict: true,
-        schema: draftingSchema
+      input:
+        prompt,
+
+      text: {
+
+        format: {
+
+          type:
+            "json_schema",
+
+          name:
+            "revenue_drafting_output",
+
+          strict:
+            true,
+
+          schema:
+            draftingSchema
+        }
       }
-    }
-  });
+    });
 
-  const raw = cleanText(
-    response.output_text || ""
-  );
+  const raw =
+    cleanText(
+      response.output_text || ""
+    );
 
   if (!raw) {
+
     throw new Error(
       "OpenAI did not return a drafting response."
     );
@@ -382,11 +504,18 @@ Return JSON according to the required schema.
   let result;
 
   try {
-    result = JSON.parse(raw);
+
+    result =
+      JSON.parse(raw);
+
   } catch (error) {
+
     console.error(
       "OpenAI JSON parse error:",
-      raw.substring(0, 2000)
+      raw.substring(
+        0,
+        2000
+      )
     );
 
     throw new Error(
@@ -398,10 +527,239 @@ Return JSON according to the required schema.
 }
 
 // =====================================================
-// CONTINUE / ALTER
+// GEMINI DRAFTING FALLBACK
 // =====================================================
 
-async function alterDraftWithOpenAI({
+async function generateDraftWithGemini({
+  sourceText,
+  workCommand,
+  language,
+  recipient,
+  subject
+}) {
+
+  ensureConfigured(
+    gemini,
+    "Gemini"
+  );
+
+  const prompt = `
+
+${DRAFTING_SYSTEM_INSTRUCTION}
+
+LANGUAGE:
+${language || "English"}
+
+RECIPIENT:
+${recipient || "[Recipient]"}
+
+SUBJECT:
+${subject || "[Subject]"}
+
+SOURCE / RECEIVED TEXT:
+========================
+${limitText(sourceText)}
+========================
+
+WORK / COMMAND:
+===============
+${limitText(
+  workCommand,
+  30000
+)}
+===============
+
+Prepare the complete official Letter
+and complete official Note File.
+
+Return ONLY JSON matching the supplied schema.
+
+`;
+
+  const response =
+    await gemini.models.generateContent({
+
+      model:
+        GEMINI_MODEL,
+
+      contents:
+        prompt,
+
+      config: {
+
+        temperature: 0,
+
+        maxOutputTokens: 30000,
+
+        responseMimeType:
+          "application/json",
+
+        responseSchema:
+          draftingSchema
+      }
+    });
+
+  const raw =
+    cleanText(
+      response.text || ""
+    );
+
+  if (!raw) {
+
+    throw new Error(
+      "Gemini did not return a drafting response."
+    );
+  }
+
+  let result;
+
+  try {
+
+    result =
+      JSON.parse(raw);
+
+  } catch (error) {
+
+    console.error(
+      "Gemini JSON parse error:",
+      raw.substring(
+        0,
+        2000
+      )
+    );
+
+    throw new Error(
+      "Gemini returned an invalid structured response."
+    );
+  }
+
+  return result;
+}
+
+// =====================================================
+// OPENAI FALLBACK ERROR DETECTION
+// =====================================================
+
+function shouldFallbackToGemini(
+  error
+) {
+
+  if (!error) {
+    return false;
+  }
+
+  const status =
+    error.status ||
+    error.statusCode;
+
+  const code =
+    String(
+      error.code || ""
+    ).toLowerCase();
+
+  const message =
+    String(
+      error.message || ""
+    ).toLowerCase();
+
+  // -----------------------------------------------
+  // Credit / quota / billing / rate limit
+  // -----------------------------------------------
+
+  if (
+    status === 429
+  ) {
+    return true;
+  }
+
+  if (
+    code.includes(
+      "insufficient_quota"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    code.includes(
+      "quota"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    code.includes(
+      "billing"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes(
+      "insufficient_quota"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes(
+      "credit_balance_exhausted"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes(
+      "insufficient credit"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes(
+      "quota"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes(
+      "billing"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes(
+      "rate limit"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    message.includes(
+      "exceeded your current quota"
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+// =====================================================
+// GEMINI CONTINUE / ALTER
+// =====================================================
+
+async function alterDraftWithGemini({
   sourceText,
   previousLetter,
   previousNoteFile,
@@ -410,9 +768,18 @@ async function alterDraftWithOpenAI({
   recipient,
   subject
 }) {
-  ensureConfigured(openai, "OpenAI");
+
+  ensureConfigured(
+    gemini,
+    "Gemini"
+  );
 
   const prompt = `
+
+${DRAFTING_SYSTEM_INSTRUCTION}
+
+This is a Continue / Alter operation.
+
 LANGUAGE:
 ${language || "English"}
 
@@ -429,21 +796,184 @@ ${limitText(sourceText)}
 
 PREVIOUS LETTER:
 ================
-${limitText(previousLetter, 60000)}
+${limitText(
+  previousLetter,
+  60000
+)}
 ================
 
 PREVIOUS NOTE FILE:
 ===================
-${limitText(previousNoteFile, 60000)}
+${limitText(
+  previousNoteFile,
+  60000
+)}
 ===================
 
 NEW CONTINUE / ALTER COMMAND:
 =============================
-${limitText(alterCommand, 30000)}
+${limitText(
+  alterCommand,
+  30000
+)}
 =============================
 
-Revise the previous Letter and Note File according to the
-new command.
+IMPORTANT:
+
+1. Keep all valid original facts.
+
+2. Apply the new command.
+
+3. Remove information only if specifically
+   instructed.
+
+4. Add only information supported by the
+   source or command.
+
+5. Do not invent facts.
+
+6. Do not search for Government Orders.
+
+7. Do not introduce unrelated Government Orders.
+
+8. Preserve names, dates, amounts and references.
+
+9. Prepare the COMPLETE revised Letter.
+
+10. Prepare the COMPLETE revised Note File.
+
+11. Do not return only changed portions.
+
+12. Use formal Tamil Nadu Government /
+    Collectorate drafting style.
+
+13. Do not mention AI.
+
+Return ONLY JSON matching the supplied schema.
+
+`;
+
+  const response =
+    await gemini.models.generateContent({
+
+      model:
+        GEMINI_MODEL,
+
+      contents:
+        prompt,
+
+      config: {
+
+        temperature: 0,
+
+        maxOutputTokens: 30000,
+
+        responseMimeType:
+          "application/json",
+
+        responseSchema:
+          draftingSchema
+      }
+    });
+
+  const raw =
+    cleanText(
+      response.text || ""
+    );
+
+  if (!raw) {
+
+    throw new Error(
+      "Gemini did not return a revised draft."
+    );
+  }
+
+  let result;
+
+  try {
+
+    result =
+      JSON.parse(raw);
+
+  } catch (error) {
+
+    console.error(
+      "Gemini revised JSON parse error:",
+      raw.substring(
+        0,
+        2000
+      )
+    );
+
+    throw new Error(
+      "Gemini returned invalid revised draft JSON."
+    );
+  }
+
+  return result;
+}
+
+// =====================================================
+// OPENAI CONTINUE / ALTER
+// =====================================================
+
+async function alterDraftWithOpenAI({
+  sourceText,
+  previousLetter,
+  previousNoteFile,
+  alterCommand,
+  language,
+  recipient,
+  subject
+}) {
+
+  ensureConfigured(
+    openai,
+    "OpenAI"
+  );
+
+  const prompt = `
+
+LANGUAGE:
+${language || "English"}
+
+RECIPIENT:
+${recipient || "[Recipient]"}
+
+SUBJECT:
+${subject || "[Subject]"}
+
+ORIGINAL SOURCE:
+================
+${limitText(sourceText)}
+================
+
+PREVIOUS LETTER:
+================
+${limitText(
+  previousLetter,
+  60000
+)}
+================
+
+PREVIOUS NOTE FILE:
+===================
+${limitText(
+  previousNoteFile,
+  60000
+)}
+===================
+
+NEW CONTINUE / ALTER COMMAND:
+=============================
+${limitText(
+  alterCommand,
+  30000
+)}
+=============================
+
+Revise the previous Letter and Note File according
+to the new command.
 
 IMPORTANT:
 
@@ -455,31 +985,47 @@ IMPORTANT:
 - Do not search or introduce unrelated Government Orders.
 - Return complete revised Letter and complete revised Note File.
 - Do not return only the changed paragraph.
+
 `;
 
-  const response = await openai.responses.create({
-    model: OPENAI_MODEL,
+  const response =
+    await openai.responses.create({
 
-    instructions:
-      OPENAI_SYSTEM_INSTRUCTION,
+      model:
+        OPENAI_MODEL,
 
-    input: prompt,
+      instructions:
+        OPENAI_SYSTEM_INSTRUCTION,
 
-    text: {
-      format: {
-        type: "json_schema",
-        name: "revenue_drafting_output",
-        strict: true,
-        schema: draftingSchema
+      input:
+        prompt,
+
+      text: {
+
+        format: {
+
+          type:
+            "json_schema",
+
+          name:
+            "revenue_drafting_output",
+
+          strict:
+            true,
+
+          schema:
+            draftingSchema
+        }
       }
-    }
-  });
+    });
 
-  const raw = cleanText(
-    response.output_text || ""
-  );
+  const raw =
+    cleanText(
+      response.output_text || ""
+    );
 
   if (!raw) {
+
     throw new Error(
       "OpenAI did not return a revised draft."
     );
@@ -488,8 +1034,12 @@ IMPORTANT:
   let result;
 
   try {
-    result = JSON.parse(raw);
+
+    result =
+      JSON.parse(raw);
+
   } catch (error) {
+
     throw new Error(
       "OpenAI returned invalid revised draft JSON."
     );
@@ -502,35 +1052,77 @@ IMPORTANT:
 // HEALTH
 // =====================================================
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
+app.get(
+  "/api/health",
+  (req, res) => {
 
-    service:
-      "Revenue Office Drafting Assistant",
+    res.json({
 
-    geminiConfigured:
-      Boolean(GEMINI_API_KEY),
+      success: true,
 
-    openaiConfigured:
-      Boolean(OPENAI_API_KEY),
+      service:
+        "Revenue Office Drafting Assistant",
 
-    geminiModel:
-      GEMINI_MODEL,
+      // -------------------------------------------
+      // API configuration
+      // -------------------------------------------
 
-    openaiModel:
-      OPENAI_MODEL,
+      geminiConfigured:
+        Boolean(
+          GEMINI_API_KEY
+        ),
 
-    pdfOCR:
-      Boolean(GEMINI_API_KEY),
+      openaiConfigured:
+        Boolean(
+          OPENAI_API_KEY
+        ),
 
-    drafting:
-      Boolean(OPENAI_API_KEY),
+      // -------------------------------------------
+      // Models
+      // -------------------------------------------
 
-    timestamp:
-      new Date().toISOString()
-  });
-});
+      geminiModel:
+        GEMINI_MODEL,
+
+      openaiModel:
+        OPENAI_MODEL,
+
+      // -------------------------------------------
+      // Capabilities
+      // -------------------------------------------
+
+      pdfOCR:
+        Boolean(
+          GEMINI_API_KEY
+        ),
+
+      openaiDrafting:
+        Boolean(
+          OPENAI_API_KEY
+        ),
+
+      geminiDrafting:
+        Boolean(
+          GEMINI_API_KEY
+        ),
+
+      drafting:
+        Boolean(
+          OPENAI_API_KEY ||
+          GEMINI_API_KEY
+        ),
+
+      automaticFallback:
+        Boolean(
+          OPENAI_API_KEY &&
+          GEMINI_API_KEY
+        ),
+
+      timestamp:
+        new Date().toISOString()
+    });
+  }
+);
 
 // =====================================================
 // PDF → TEXT
@@ -538,13 +1130,21 @@ app.get("/api/health", (req, res) => {
 
 app.post(
   "/api/pdf-to-text",
+
   upload.single("pdf"),
+
   async (req, res) => {
+
     try {
+
       if (!req.file) {
+
         return res.status(400).json({
+
           success: false,
-          message: "Please upload a PDF file."
+
+          message:
+            "Please upload a PDF file."
         });
       }
 
@@ -566,13 +1166,16 @@ app.post(
         );
 
       const limitedText =
-        limitText(extractedText);
+        limitText(
+          extractedText
+        );
 
       console.log(
         `Gemini extraction completed. Characters: ${limitedText.length}`
       );
 
       res.json({
+
         success: true,
 
         filename:
@@ -584,17 +1187,22 @@ app.post(
         characterCount:
           limitedText.length,
 
+        provider:
+          "Gemini",
+
         model:
           GEMINI_MODEL
       });
 
     } catch (error) {
+
       console.error(
         "PDF extraction error:",
         error
       );
 
       res.status(500).json({
+
         success: false,
 
         message:
@@ -607,12 +1215,16 @@ app.post(
 
 // =====================================================
 // GENERATE LETTER + NOTE FILE
+// OPENAI → GEMINI FALLBACK
 // =====================================================
 
 app.post(
   "/api/generate",
+
   async (req, res) => {
+
     try {
+
       const {
         sourceText,
         workCommand,
@@ -621,51 +1233,215 @@ app.post(
         subject
       } = req.body;
 
-      if (!cleanText(sourceText)) {
+      // ---------------------------------------------
+      // VALIDATION
+      // ---------------------------------------------
+
+      if (
+        !cleanText(
+          sourceText
+        )
+      ) {
+
         return res.status(400).json({
+
           success: false,
+
           message:
             "Source / Received Text is required."
         });
       }
 
-      if (!cleanText(workCommand)) {
+      if (
+        !cleanText(
+          workCommand
+        )
+      ) {
+
         return res.status(400).json({
+
           success: false,
+
           message:
             "Work / Command is required."
         });
       }
 
+      // ---------------------------------------------
+      // FIRST: OPENAI
+      // ---------------------------------------------
+
+      if (openai) {
+
+        try {
+
+          console.log(
+            "=============================================="
+          );
+
+          console.log(
+            "🤖 Trying OpenAI for Letter + Note File..."
+          );
+
+          console.log(
+            `OpenAI model: ${OPENAI_MODEL}`
+          );
+
+          const result =
+            await generateDraftWithOpenAI({
+
+              sourceText,
+
+              workCommand,
+
+              language,
+
+              recipient,
+
+              subject
+            });
+
+          console.log(
+            "✅ OpenAI drafting successful."
+          );
+
+          return res.json({
+
+            success: true,
+
+            ...result,
+
+            provider:
+              "OpenAI",
+
+            model:
+              OPENAI_MODEL,
+
+            fallback:
+              false
+          });
+
+        } catch (openAIError) {
+
+          console.error(
+            "❌ OpenAI drafting failed."
+          );
+
+          console.error(
+            "OpenAI status:",
+            openAIError.status ||
+            openAIError.statusCode ||
+            "unknown"
+          );
+
+          console.error(
+            "OpenAI code:",
+            openAIError.code ||
+            "unknown"
+          );
+
+          console.error(
+            "OpenAI message:",
+            openAIError.message ||
+            openAIError
+          );
+
+          // -----------------------------------------
+          // FALLBACK CHECK
+          // -----------------------------------------
+
+          if (
+            shouldFallbackToGemini(
+              openAIError
+            )
+          ) {
+
+            console.log(
+              "⚠️ OpenAI credit/quota/billing unavailable."
+            );
+
+            console.log(
+              "🔄 Automatically switching to Gemini..."
+            );
+
+          } else {
+
+            // ---------------------------------------
+            // Other OpenAI errors should NOT be
+            // hidden by Gemini.
+            // ---------------------------------------
+
+            throw openAIError;
+          }
+        }
+      }
+
+      // ---------------------------------------------
+      // SECOND: GEMINI FALLBACK
+      // ---------------------------------------------
+
+      if (!gemini) {
+
+        return res.status(503).json({
+
+          success: false,
+
+          message:
+            "OpenAI is unavailable and Gemini API is not configured."
+        });
+      }
+
       console.log(
-        "Generating Letter + Note File using OpenAI..."
+        "🤖 Generating Letter + Note File using Gemini..."
+      );
+
+      console.log(
+        `Gemini model: ${GEMINI_MODEL}`
       );
 
       const result =
-        await generateDraftWithOpenAI({
+        await generateDraftWithGemini({
+
           sourceText,
+
           workCommand,
+
           language,
+
           recipient,
+
           subject
         });
 
-      res.json({
+      console.log(
+        "✅ Gemini fallback drafting successful."
+      );
+
+      return res.json({
+
         success: true,
 
         ...result,
 
+        provider:
+          "Gemini",
+
         model:
-          OPENAI_MODEL
+          GEMINI_MODEL,
+
+        fallback:
+          true
       });
 
     } catch (error) {
+
       console.error(
         "Generation error:",
         error
       );
 
       res.status(500).json({
+
         success: false,
 
         message:
@@ -678,12 +1454,16 @@ app.post(
 
 // =====================================================
 // CONTINUE / ALTER
+// OPENAI → GEMINI FALLBACK
 // =====================================================
 
 app.post(
   "/api/continue",
+
   async (req, res) => {
+
     try {
+
       const {
         sourceText,
         previousLetter,
@@ -694,69 +1474,240 @@ app.post(
         subject
       } = req.body;
 
-      if (!cleanText(sourceText)) {
+      // ---------------------------------------------
+      // VALIDATION
+      // ---------------------------------------------
+
+      if (
+        !cleanText(
+          sourceText
+        )
+      ) {
+
         return res.status(400).json({
+
           success: false,
+
           message:
             "Original source text is missing."
         });
       }
 
-      if (!cleanText(previousLetter)) {
+      if (
+        !cleanText(
+          previousLetter
+        )
+      ) {
+
         return res.status(400).json({
+
           success: false,
+
           message:
             "Previous Letter is missing."
         });
       }
 
-      if (!cleanText(previousNoteFile)) {
+      if (
+        !cleanText(
+          previousNoteFile
+        )
+      ) {
+
         return res.status(400).json({
+
           success: false,
+
           message:
             "Previous Note File is missing."
         });
       }
 
-      if (!cleanText(alterCommand)) {
+      if (
+        !cleanText(
+          alterCommand
+        )
+      ) {
+
         return res.status(400).json({
+
           success: false,
+
           message:
             "Continue / Alter Command is required."
         });
       }
 
+      // ---------------------------------------------
+      // FIRST: OPENAI
+      // ---------------------------------------------
+
+      if (openai) {
+
+        try {
+
+          console.log(
+            "=============================================="
+          );
+
+          console.log(
+            "🤖 Trying OpenAI for Continue / Alter..."
+          );
+
+          console.log(
+            `OpenAI model: ${OPENAI_MODEL}`
+          );
+
+          const result =
+            await alterDraftWithOpenAI({
+
+              sourceText,
+
+              previousLetter,
+
+              previousNoteFile,
+
+              alterCommand,
+
+              language,
+
+              recipient,
+
+              subject
+            });
+
+          console.log(
+            "✅ OpenAI Continue / Alter successful."
+          );
+
+          return res.json({
+
+            success: true,
+
+            ...result,
+
+            provider:
+              "OpenAI",
+
+            model:
+              OPENAI_MODEL,
+
+            fallback:
+              false
+          });
+
+        } catch (openAIError) {
+
+          console.error(
+            "❌ OpenAI Continue / Alter failed."
+          );
+
+          console.error(
+            "OpenAI status:",
+            openAIError.status ||
+            openAIError.statusCode ||
+            "unknown"
+          );
+
+          console.error(
+            "OpenAI code:",
+            openAIError.code ||
+            "unknown"
+          );
+
+          console.error(
+            "OpenAI message:",
+            openAIError.message ||
+            openAIError
+          );
+
+          if (
+            shouldFallbackToGemini(
+              openAIError
+            )
+          ) {
+
+            console.log(
+              "⚠️ OpenAI credit/quota/billing unavailable."
+            );
+
+            console.log(
+              "🔄 Switching Continue / Alter to Gemini..."
+            );
+
+          } else {
+
+            throw openAIError;
+          }
+        }
+      }
+
+      // ---------------------------------------------
+      // SECOND: GEMINI
+      // ---------------------------------------------
+
+      if (!gemini) {
+
+        return res.status(503).json({
+
+          success: false,
+
+          message:
+            "OpenAI is unavailable and Gemini API is not configured."
+        });
+      }
+
       console.log(
-        "Applying Continue / Alter command using OpenAI..."
+        "🤖 Generating revised draft using Gemini..."
       );
 
       const result =
-        await alterDraftWithOpenAI({
+        await alterDraftWithGemini({
+
           sourceText,
+
           previousLetter,
+
           previousNoteFile,
+
           alterCommand,
+
           language,
+
           recipient,
+
           subject
         });
 
-      res.json({
+      console.log(
+        "✅ Gemini Continue / Alter successful."
+      );
+
+      return res.json({
+
         success: true,
 
         ...result,
 
+        provider:
+          "Gemini",
+
         model:
-          OPENAI_MODEL
+          GEMINI_MODEL,
+
+        fallback:
+          true
       });
 
     } catch (error) {
+
       console.error(
         "Continue / Alter error:",
         error
       );
 
       res.status(500).json({
+
         success: false,
 
         message:
@@ -771,13 +1722,21 @@ app.post(
 // WORD GENERATION
 // =====================================================
 
-function textToParagraphs(text) {
-  const cleaned = cleanText(text);
+function textToParagraphs(
+  text
+) {
+
+  const cleaned =
+    cleanText(text);
 
   if (!cleaned) {
+
     return [
+
       new Paragraph({
+
         children: [
+
           new TextRun("")
         ]
       })
@@ -786,34 +1745,54 @@ function textToParagraphs(text) {
 
   return cleaned
     .split(/\n/)
-    .map((line) => {
-      return new Paragraph({
-        spacing: {
-          after: 120
-        },
+    .map(
+      (line) => {
 
-        children: [
-          new TextRun({
-            text: line
-          })
-        ]
-      });
-    });
+        return new Paragraph({
+
+          spacing: {
+
+            after: 120
+          },
+
+          children: [
+
+            new TextRun({
+
+              text:
+                line
+            })
+          ]
+        });
+      }
+    );
 }
+
+// =====================================================
+// CREATE WORD DOCUMENT
+// =====================================================
 
 async function createWordDocument({
   letter,
   noteFile
 }) {
+
   const document =
     new Document({
+
       sections: [
+
         {
+
           properties: {},
 
           children: [
+
             new Paragraph({
-              text: "OFFICIAL LETTER",
+
+              text:
+                "OFFICIAL LETTER",
+
               heading:
                 HeadingLevel.HEADING_1,
 
@@ -821,16 +1800,23 @@ async function createWordDocument({
                 AlignmentType.CENTER
             }),
 
-            ...textToParagraphs(letter),
+            ...textToParagraphs(
+              letter
+            ),
 
             new Paragraph({
+
               children: [
+
                 new PageBreak()
               ]
             }),
 
             new Paragraph({
-              text: "NOTE FILE",
+
+              text:
+                "NOTE FILE",
+
               heading:
                 HeadingLevel.HEADING_1,
 
@@ -838,13 +1824,17 @@ async function createWordDocument({
                 AlignmentType.CENTER
             }),
 
-            ...textToParagraphs(noteFile)
+            ...textToParagraphs(
+              noteFile
+            )
           ]
         }
       ]
     });
 
-  return Packer.toBuffer(document);
+  return Packer.toBuffer(
+    document
+  );
 }
 
 // =====================================================
@@ -853,24 +1843,37 @@ async function createWordDocument({
 
 app.post(
   "/api/download-word",
+
   async (req, res) => {
+
     try {
+
       const {
         letter,
         noteFile
       } = req.body;
 
-      if (!cleanText(letter)) {
+      if (
+        !cleanText(letter)
+      ) {
+
         return res.status(400).json({
+
           success: false,
+
           message:
             "Letter is missing."
         });
       }
 
-      if (!cleanText(noteFile)) {
+      if (
+        !cleanText(noteFile)
+      ) {
+
         return res.status(400).json({
+
           success: false,
+
           message:
             "Note File is missing."
         });
@@ -878,7 +1881,9 @@ app.post(
 
       const buffer =
         await createWordDocument({
+
           letter,
+
           noteFile
         });
 
@@ -898,13 +1903,16 @@ app.post(
       res.send(buffer);
 
     } catch (error) {
+
       console.error(
         "Word generation error:",
         error
       );
 
       res.status(500).json({
+
         success: false,
+
         message:
           "Word file generation failed."
       });
@@ -918,43 +1926,65 @@ app.post(
 
 app.use(
   express.static(
-    path.join(__dirname, "public")
+    path.join(
+      __dirname,
+      "public"
+    )
   )
 );
 
-app.use((req, res) => {
-  res.sendFile(
-    path.join(
-      __dirname,
-      "public",
-      "index.html"
-    )
-  );
-});
+// =====================================================
+// SPA FALLBACK
+// =====================================================
+
+app.use(
+  (req, res) => {
+
+    res.sendFile(
+      path.join(
+        __dirname,
+        "public",
+        "index.html"
+      )
+    );
+  }
+);
 
 // =====================================================
 // ERROR HANDLER
 // =====================================================
 
 app.use(
-  (error, req, res, next) => {
+  (
+    error,
+    req,
+    res,
+    next
+  ) => {
+
     console.error(
       "Server error:",
       error
     );
 
     if (
-      error instanceof multer.MulterError &&
-      error.code === "LIMIT_FILE_SIZE"
+      error instanceof
+        multer.MulterError &&
+      error.code ===
+        "LIMIT_FILE_SIZE"
     ) {
+
       return res.status(413).json({
+
         success: false,
+
         message:
           `PDF is too large. Maximum allowed size is ${MAX_PDF_MB} MB.`
       });
     }
 
     res.status(500).json({
+
       success: false,
 
       message:
@@ -968,53 +1998,62 @@ app.use(
 // START
 // =====================================================
 
-app.listen(PORT, () => {
-  console.log("");
-  console.log(
-    "=============================================="
-  );
+app.listen(
+  PORT,
+  () => {
 
-  console.log(
-    " Revenue Office Drafting Assistant"
-  );
+    console.log("");
 
-  console.log(
-    "=============================================="
-  );
+    console.log(
+      "=============================================="
+    );
 
-  console.log(
-    `Server running on port ${PORT}`
-  );
+    console.log(
+      " Revenue Office Drafting Assistant"
+    );
 
-  console.log(
-    `Gemini configured: ${Boolean(GEMINI_API_KEY)}`
-  );
+    console.log(
+      "=============================================="
+    );
 
-  console.log(
-    `Gemini model: ${GEMINI_MODEL}`
-  );
+    console.log(
+      `Server running on port ${PORT}`
+    );
 
-  console.log(
-    `OpenAI configured: ${Boolean(OPENAI_API_KEY)}`
-  );
+    console.log(
+      `Gemini configured: ${Boolean(GEMINI_API_KEY)}`
+    );
 
-  console.log(
-    `OpenAI model: ${OPENAI_MODEL}`
-  );
+    console.log(
+      `Gemini model: ${GEMINI_MODEL}`
+    );
 
-  console.log(
-    "PDF OCR: Gemini"
-  );
+    console.log(
+      `OpenAI configured: ${Boolean(OPENAI_API_KEY)}`
+    );
 
-  console.log(
-    "Letter + Note File: OpenAI"
-  );
+    console.log(
+      `OpenAI model: ${OPENAI_MODEL}`
+    );
 
-  console.log(
-    "Word generation: Node.js"
-  );
+    console.log(
+      "PDF OCR: Gemini"
+    );
 
-  console.log(
-    "=============================================="
-  );
-});
+    console.log(
+      "Drafting: OpenAI → Gemini fallback"
+    );
+
+    console.log(
+      "Continue / Alter: OpenAI → Gemini fallback"
+    );
+
+    console.log(
+      "Word generation: Node.js"
+    );
+
+    console.log(
+      "=============================================="
+    );
+  }
+);
