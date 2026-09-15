@@ -81,7 +81,32 @@ app.use(express.urlencoded({ extended: true }));
 // =====================================================
 // MULTER
 // =====================================================
+app.post("/api/search", async (req, res) => {
 
+    try {
+
+        const { query } = req.body;
+
+        console.log("Search query:", query);
+
+        // Search logic here
+
+        res.json({
+            success: true,
+            answer: "Search completed"
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+
+});
 const upload = multer({
   storage: multer.memoryStorage(),
 
