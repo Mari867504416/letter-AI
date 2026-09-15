@@ -1,0 +1,23 @@
+{
+  "name": "revenue-office-drafting-assistant",
+  "version": "3.0.0",
+  "description": "Tamil Nadu Revenue Department Letter and Note File Drafting Assistant",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@google/genai": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "docx": "^9.0.0",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.0",
+    "openai": "^5.0.0"
+  }
+}
