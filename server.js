@@ -2265,3 +2265,123 @@ process.on(
   "SIGINT",
   () => shutdown("SIGINT")
 );
+/* =====================================================
+   API 404
+   ===================================================== */
+
+app.use((req, res) => {
+
+  res.status(404).json({
+    success: false,
+    message: "API route not found."
+  });
+
+});
+
+
+/* =====================================================
+   GLOBAL ERROR HANDLER
+   ===================================================== */
+
+app.use((err, req, res, next) => {
+
+  console.error("Server error:", err);
+
+
+  if (err.code === "LIMIT_FILE_SIZE") {
+
+    return res.status(413).json({
+      success: false,
+      message: "PDF file is too large."
+    });
+
+  }
+
+
+  if (err.message &&
+      err.message.startsWith("CORS blocked")) {
+
+    return res.status(403).json({
+      success: false,
+      message: err.message
+    });
+
+  }
+
+
+  res.status(
+    err.status || 500
+  ).json({
+
+    success: false,
+
+    message:
+      err.message ||
+      "Internal server error."
+
+  });
+
+});
+
+
+/* =====================================================
+   START SERVER
+   ===================================================== */
+
+const PORT =
+  Number(
+    process.env.PORT || 10000
+  );
+
+
+const server =
+  app.listen(
+    PORT,
+    () => {
+
+      console.log(
+        `Revenue Office Drafting Assistant API running on port ${PORT}`
+      );
+
+    }
+  );
+
+
+/* =====================================================
+   GRACEFUL SHUTDOWN
+   ===================================================== */
+
+process.on(
+  "SIGTERM",
+  () => {
+
+    console.log(
+      "SIGTERM received. Closing server..."
+    );
+
+    server.close(
+      () => {
+        process.exit(0);
+      }
+    );
+
+  }
+);
+
+
+process.on(
+  "SIGINT",
+  () => {
+
+    console.log(
+      "SIGINT received. Closing server..."
+    );
+
+    server.close(
+      () => {
+        process.exit(0);
+      }
+    );
+
+  }
+);
