@@ -26,10 +26,9 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-const PORT = Number(process.env.PORT || 10000);
-
-
-
+const PORT = Number(
+  process.env.PORT || 10000
+);
 
 // =====================================================
 // ENVIRONMENT
@@ -40,7 +39,15 @@ const GEMINI_API_KEY =
 
 const GEMINI_MODEL =
   process.env.GEMINI_MODEL ||
-  "gemini-3-flash-preview";
+  "gemini-3.6-flash";
+
+const GEMINI_FALLBACK_MODELS = (
+  process.env.GEMINI_FALLBACK_MODELS ||
+  ""
+)
+  .split(",")
+  .map(item => item.trim())
+  .filter(Boolean);
 
 const OPENAI_API_KEY =
   process.env.OPENAI_API_KEY || "";
@@ -50,10 +57,14 @@ const OPENAI_MODEL =
   "gpt-5.6-terra";
 
 const MAX_PDF_MB =
-  Number(process.env.MAX_PDF_MB || 20);
+  Number(
+    process.env.MAX_PDF_MB || 20
+  );
 
 const MAX_SOURCE_CHARS =
-  Number(process.env.MAX_SOURCE_CHARS || 120000);
+  Number(
+    process.env.MAX_SOURCE_CHARS || 120000
+  );
 
 const FRONTEND_ORIGIN =
   process.env.FRONTEND_ORIGIN || "";
@@ -78,51 +89,65 @@ const openai = OPENAI_API_KEY
 // CORS
 // =====================================================
 
-const allowedOrigins = FRONTEND_ORIGIN
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
-/* =====================================================
-   CORS
-   ===================================================== */
+const allowedOrigins =
+  FRONTEND_ORIGIN
+    .split(",")
+    .map(origin => origin.trim())
+    .filter(Boolean);
 
 const corsOptions = {
-  origin: function (origin, callback) {
 
-    // Browser sends no Origin header
+  origin: function (
+    origin,
+    callback
+  ) {
+
+    // No Origin header
     if (!origin) {
       return callback(null, true);
     }
 
-    // Some Catalyst / file / sandbox environments may send Origin: null
+    // Catalyst / local file / sandbox
     if (origin === "null") {
       return callback(null, true);
     }
 
-    const allowedOrigins =
-      (process.env.FRONTEND_ORIGIN || "")
-        .split(",")
-        .map(item => item.trim())
-        .filter(Boolean);
-
-    if (allowedOrigins.includes("*")) {
+    // Allow wildcard
+    if (
+      allowedOrigins.includes("*")
+    ) {
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin)) {
+    // Exact allowed origin
+    if (
+      allowedOrigins.includes(origin)
+    ) {
       return callback(null, true);
     }
 
-    console.log("CORS blocked origin:", origin);
-    console.log("Allowed origins:", allowedOrigins);
+    console.log(
+      "CORS blocked origin:",
+      origin
+    );
+
+    console.log(
+      "Allowed origins:",
+      allowedOrigins
+    );
 
     return callback(
-      new Error(`CORS blocked origin: ${origin}`)
+      new Error(
+        `CORS blocked origin: ${origin}`
+      )
     );
   },
 
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: [
+    "GET",
+    "POST",
+    "OPTIONS"
+  ],
 
   allowedHeaders: [
     "Content-Type",
@@ -132,9 +157,19 @@ const corsOptions = {
   credentials: false
 };
 
-app.use(cors(corsOptions));
+app.use(
+  cors(corsOptions)
+);
 
+// =====================================================
+// SECURITY
+// =====================================================
 
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false
+  })
+);
 
 // =====================================================
 // BODY PARSERS
@@ -157,44 +192,45 @@ app.use(
 // MULTER
 // =====================================================
 
-const upload = multer({
+const upload =
+  multer({
 
-  storage:
-    multer.memoryStorage(),
+    storage:
+      multer.memoryStorage(),
 
-  limits: {
+    limits: {
 
-    fileSize:
-      MAX_PDF_MB *
-      1024 *
-      1024
-  },
+      fileSize:
+        MAX_PDF_MB *
+        1024 *
+        1024
+    },
 
-  fileFilter: (
-    req,
-    file,
-    cb
-  ) => {
+    fileFilter: (
+      req,
+      file,
+      cb
+    ) => {
 
-    const isPDF =
-      file.mimetype ===
-        "application/pdf" ||
-      file.originalname
-        .toLowerCase()
-        .endsWith(".pdf");
+      const isPDF =
+        file.mimetype ===
+          "application/pdf" ||
+        file.originalname
+          .toLowerCase()
+          .endsWith(".pdf");
 
-    if (!isPDF) {
+      if (!isPDF) {
 
-      return cb(
-        new Error(
-          "PDF files only are allowed."
-        )
-      );
+        return cb(
+          new Error(
+            "PDF files only are allowed."
+          )
+        );
+      }
+
+      cb(null, true);
     }
-
-    cb(null, true);
-  }
-});
+  });
 
 // =====================================================
 // HELPERS
@@ -254,12 +290,290 @@ function ensureConfigured(
 
 // -----------------------------------------------------
 
-function getErrorMessage(error) {
+function getErrorMessage(
+  error
+) {
 
   return (
     error?.message ||
     String(error) ||
     "Unknown error"
+  );
+}
+
+// -----------------------------------------------------
+
+function sleep(ms) {
+
+  return new Promise(
+    resolve =>
+      setTimeout(
+        resolve,
+        ms
+      )
+  );
+}
+
+// =====================================================
+// GEMINI MODEL LIST
+// =====================================================
+
+function getGeminiModelCandidates() {
+
+  const candidates = [
+    GEMINI_MODEL,
+    ...GEMINI_FALLBACK_MODELS
+  ];
+
+  return [
+    ...new Set(
+      candidates
+        .map(model =>
+          String(model).trim()
+        )
+        .filter(Boolean)
+    )
+  ];
+}
+
+// =====================================================
+// GEMINI ERROR HELPERS
+// =====================================================
+
+function getGeminiStatus(
+  error
+) {
+
+  return Number(
+    error?.status ||
+    error?.statusCode ||
+    error?.error?.code ||
+    0
+  );
+}
+
+// -----------------------------------------------------
+
+function isGeminiRetryable(
+  error
+) {
+
+  const status =
+    getGeminiStatus(error);
+
+  const message =
+    getErrorMessage(error)
+      .toLowerCase();
+
+  return (
+    status === 429 ||
+    status === 500 ||
+    status === 502 ||
+    status === 503 ||
+    status === 504 ||
+    message.includes(
+      "high demand"
+    ) ||
+    message.includes(
+      "temporarily unavailable"
+    ) ||
+    message.includes(
+      "unavailable"
+    ) ||
+    message.includes(
+      "overloaded"
+    )
+  );
+}
+
+// -----------------------------------------------------
+
+function isGeminiModelUnavailable(
+  error
+) {
+
+  const status =
+    getGeminiStatus(error);
+
+  const message =
+    getErrorMessage(error)
+      .toLowerCase();
+
+  return (
+    status === 404 ||
+    message.includes(
+      "model is not found"
+    ) ||
+    message.includes(
+      "not found"
+    ) ||
+    message.includes(
+      "no longer available"
+    ) ||
+    message.includes(
+      "not available to new users"
+    )
+  );
+}
+
+// =====================================================
+// GEMINI GENERATE WITH RETRY + FALLBACK
+// =====================================================
+
+async function generateWithGeminiFallback({
+
+  requestFactory,
+  operationName
+
+}) {
+
+  ensureConfigured(
+    gemini,
+    "Gemini"
+  );
+
+  const models =
+    getGeminiModelCandidates();
+
+  if (!models.length) {
+
+    throw new Error(
+      "No Gemini models configured."
+    );
+  }
+
+  let lastError =
+    null;
+
+  for (
+    let modelIndex = 0;
+    modelIndex < models.length;
+    modelIndex++
+  ) {
+
+    const model =
+      models[modelIndex];
+
+    console.log(
+      `Gemini ${operationName} model: ${model}`
+    );
+
+    // -------------------------------------------------
+    // Retry current model
+    // -------------------------------------------------
+
+    const maxAttempts = 3;
+
+    for (
+      let attempt = 1;
+      attempt <= maxAttempts;
+      attempt++
+    ) {
+
+      try {
+
+        const response =
+          await requestFactory(
+            model
+          );
+
+        console.log(
+          `Gemini ${operationName} successful using ${model}`
+        );
+
+        return {
+          response,
+          model
+        };
+
+      } catch (error) {
+
+        lastError =
+          error;
+
+        const status =
+          getGeminiStatus(
+            error
+          );
+
+        console.error(
+          `Gemini ${operationName} failed. Model: ${model}`
+        );
+
+        console.error(
+          `Gemini status: ${status || "unknown"}`
+        );
+
+        console.error(
+          `Gemini message: ${getErrorMessage(error)}`
+        );
+
+        // -------------------------------------------------
+        // Model unavailable → next model immediately
+        // -------------------------------------------------
+
+        if (
+          isGeminiModelUnavailable(
+            error
+          )
+        ) {
+
+          console.log(
+            `Gemini model ${model} unavailable. Trying next model...`
+          );
+
+          break;
+        }
+
+        // -------------------------------------------------
+        // Retryable error
+        // -------------------------------------------------
+
+        if (
+          isGeminiRetryable(
+            error
+          )
+        ) {
+
+          if (
+            attempt < maxAttempts
+          ) {
+
+            const delay =
+              attempt * 2000;
+
+            console.log(
+              `Retrying Gemini in ${delay} ms...`
+            );
+
+            await sleep(
+              delay
+            );
+
+            continue;
+          }
+
+          console.log(
+            `Gemini ${model} failed after ${maxAttempts} attempts.`
+          );
+
+          break;
+        }
+
+        // -------------------------------------------------
+        // Non-retryable
+        // -------------------------------------------------
+
+        throw error;
+      }
+    }
+  }
+
+  throw (
+    lastError ||
+    new Error(
+      "All Gemini models failed."
+    )
   );
 }
 
@@ -460,7 +774,9 @@ async function extractPdfTextWithGemini(
   );
 
   const base64PDF =
-    pdfBuffer.toString("base64");
+    pdfBuffer.toString(
+      "base64"
+    );
 
   const extractionPrompt = `
 
@@ -505,43 +821,52 @@ Start from page 1 and continue through the last page.
 
 `;
 
-  const response =
-    await gemini.models.generateContent({
+  const result =
+    await generateWithGeminiFallback({
 
-      model:
-        GEMINI_MODEL,
+      operationName:
+        "PDF OCR",
 
-      contents: [
+      requestFactory:
+        (model) =>
+          gemini.models.generateContent({
 
-        {
-          text:
-            extractionPrompt
-        },
+            model,
 
-        {
-          inlineData: {
+            contents: [
 
-            mimeType:
-              "application/pdf",
+              {
+                text:
+                  extractionPrompt
+              },
 
-            data:
-              base64PDF
-          }
-        }
-      ],
+              {
+                inlineData: {
 
-      config: {
+                  mimeType:
+                    "application/pdf",
 
-        temperature: 0,
+                  data:
+                    base64PDF
+                }
+              }
+            ],
 
-        maxOutputTokens:
-          30000
-      }
+            config: {
+
+              temperature:
+                0,
+
+              maxOutputTokens:
+                30000
+            }
+          })
     });
 
   const extractedText =
     cleanText(
-      response.text || ""
+      result.response.text ||
+      ""
     );
 
   if (!extractedText) {
@@ -551,7 +876,13 @@ Start from page 1 and continue through the last page.
     );
   }
 
-  return extractedText;
+  return {
+    text:
+      extractedText,
+
+    model:
+      result.model
+  };
 }
 
 // =====================================================
@@ -639,7 +970,8 @@ Return JSON according to the required schema.
 
   const raw =
     cleanText(
-      response.output_text || ""
+      response.output_text ||
+      ""
     );
 
   if (!raw) {
@@ -722,35 +1054,46 @@ ${limitText(
 Prepare the complete official Letter
 and complete official Note File.
 
+Return ONLY JSON matching the supplied schema.
+
 `;
 
-  const response =
-    await gemini.models.generateContent({
+  const result =
+    await generateWithGeminiFallback({
 
-      model:
-        GEMINI_MODEL,
+      operationName:
+        "drafting",
 
-      contents:
-        prompt,
+      requestFactory:
+        (model) =>
+          gemini.models.generateContent({
 
-      config: {
+            model,
 
-        temperature: 0,
+            contents:
+              prompt,
 
-        maxOutputTokens:
-          30000,
+            config: {
 
-        responseMimeType:
-          "application/json",
+              temperature:
+                0,
 
-        responseSchema:
-          draftingSchema
-      }
+              maxOutputTokens:
+                30000,
+
+              responseMimeType:
+                "application/json",
+
+              responseSchema:
+                draftingSchema
+            }
+          })
     });
 
   const raw =
     cleanText(
-      response.text || ""
+      result.response.text ||
+      ""
     );
 
   if (!raw) {
@@ -760,11 +1103,11 @@ and complete official Note File.
     );
   }
 
-  let result;
+  let output;
 
   try {
 
-    result =
+    output =
       JSON.parse(raw);
 
   } catch (error) {
@@ -782,7 +1125,12 @@ and complete official Note File.
     );
   }
 
-  return result;
+  return {
+    ...output,
+
+    _model:
+      result.model
+  };
 }
 
 // =====================================================
@@ -901,7 +1249,8 @@ IMPORTANT:
 
   const raw =
     cleanText(
-      response.output_text || ""
+      response.output_text ||
+      ""
     );
 
   if (!raw) {
@@ -1006,33 +1355,42 @@ Return ONLY JSON matching the supplied schema.
 
 `;
 
-  const response =
-    await gemini.models.generateContent({
+  const result =
+    await generateWithGeminiFallback({
 
-      model:
-        GEMINI_MODEL,
+      operationName:
+        "Continue / Alter",
 
-      contents:
-        prompt,
+      requestFactory:
+        (model) =>
+          gemini.models.generateContent({
 
-      config: {
+            model,
 
-        temperature: 0,
+            contents:
+              prompt,
 
-        maxOutputTokens:
-          30000,
+            config: {
 
-        responseMimeType:
-          "application/json",
+              temperature:
+                0,
 
-        responseSchema:
-          draftingSchema
-      }
+              maxOutputTokens:
+                30000,
+
+              responseMimeType:
+                "application/json",
+
+              responseSchema:
+                draftingSchema
+            }
+          })
     });
 
   const raw =
     cleanText(
-      response.text || ""
+      result.response.text ||
+      ""
     );
 
   if (!raw) {
@@ -1042,11 +1400,11 @@ Return ONLY JSON matching the supplied schema.
     );
   }
 
-  let result;
+  let output;
 
   try {
 
-    result =
+    output =
       JSON.parse(raw);
 
   } catch (error) {
@@ -1064,7 +1422,12 @@ Return ONLY JSON matching the supplied schema.
     );
   }
 
-  return result;
+  return {
+    ...output,
+
+    _model:
+      result.model
+  };
 }
 
 // =====================================================
@@ -1080,8 +1443,11 @@ function shouldFallbackToGemini(
   }
 
   const status =
-    error.status ||
-    error.statusCode;
+    Number(
+      error.status ||
+      error.statusCode ||
+      0
+    );
 
   const code =
     String(
@@ -1093,17 +1459,12 @@ function shouldFallbackToGemini(
       error.message || ""
     ).toLowerCase();
 
-  // ---------------------------------------------------
   // HTTP 429
-  // ---------------------------------------------------
-
-  if (status === 429) {
+  if (
+    status === 429
+  ) {
     return true;
   }
-
-  // ---------------------------------------------------
-  // Quota / billing
-  // ---------------------------------------------------
 
   const fallbackKeywords = [
 
@@ -1127,7 +1488,7 @@ function shouldFallbackToGemini(
   ];
 
   return fallbackKeywords.some(
-    (keyword) =>
+    keyword =>
       code.includes(keyword) ||
       message.includes(keyword)
   );
@@ -1143,7 +1504,8 @@ app.get(
 
     res.json({
 
-      success: true,
+      success:
+        true,
 
       service:
         "Revenue Office Drafting Assistant API",
@@ -1166,6 +1528,9 @@ app.get(
 
       geminiModel:
         GEMINI_MODEL,
+
+      geminiFallbackModels:
+        GEMINI_FALLBACK_MODELS,
 
       openaiModel:
         OPENAI_MODEL,
@@ -1212,6 +1577,90 @@ app.get(
 );
 
 // =====================================================
+// GEMINI AVAILABLE MODELS
+// =====================================================
+
+app.get(
+  "/api/gemini-models",
+  async (req, res) => {
+
+    try {
+
+      if (!gemini) {
+
+        return res.status(500).json({
+
+          success:
+            false,
+
+          message:
+            "GEMINI_API_KEY is not configured."
+        });
+      }
+
+      const models = [];
+
+      for await (
+        const model
+        of gemini.models.list()
+      ) {
+
+        const supportedActions =
+          model.supportedActions ||
+          [];
+
+        if (
+          supportedActions.includes(
+            "generateContent"
+          )
+        ) {
+
+          models.push({
+
+            name:
+              model.name,
+
+            displayName:
+              model.displayName,
+
+            supportedActions
+          });
+        }
+      }
+
+      return res.json({
+
+        success:
+          true,
+
+        count:
+          models.length,
+
+        models
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Gemini model list error:",
+        error
+      );
+
+      return res.status(500).json({
+
+        success:
+          false,
+
+        message:
+          getErrorMessage(
+            error
+          )
+      });
+    }
+  }
+);
+
+// =====================================================
 // PDF → TEXT
 // =====================================================
 
@@ -1220,7 +1669,11 @@ app.post(
 
   upload.single("pdf"),
 
-  async (req, res) => {
+  async (
+    req,
+    res,
+    next
+  ) => {
 
     try {
 
@@ -1228,7 +1681,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Please upload a PDF file."
@@ -1253,14 +1707,14 @@ app.post(
         "Sending PDF to Gemini for OCR/document extraction..."
       );
 
-      const extractedText =
+      const result =
         await extractPdfTextWithGemini(
           req.file.buffer
         );
 
       const limitedText =
         limitText(
-          extractedText
+          result.text
         );
 
       console.log(
@@ -1269,7 +1723,8 @@ app.post(
 
       return res.json({
 
-        success: true,
+        success:
+          true,
 
         filename:
           req.file.originalname,
@@ -1284,7 +1739,7 @@ app.post(
           "Gemini",
 
         model:
-          GEMINI_MODEL
+          result.model
       });
 
     } catch (error) {
@@ -1294,13 +1749,7 @@ app.post(
         error
       );
 
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          getErrorMessage(error)
-      });
+      next(error);
     }
   }
 );
@@ -1313,7 +1762,11 @@ app.post(
 app.post(
   "/api/generate",
 
-  async (req, res) => {
+  async (
+    req,
+    res,
+    next
+  ) => {
 
     try {
 
@@ -1337,7 +1790,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Source / Received Text is required."
@@ -1352,7 +1806,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Work / Command is required."
@@ -1391,7 +1846,6 @@ app.post(
               recipient,
 
               subject
-
             });
 
           console.log(
@@ -1400,7 +1854,8 @@ app.post(
 
           return res.json({
 
-            success: true,
+            success:
+              true,
 
             ...result,
 
@@ -1414,7 +1869,9 @@ app.post(
               false
           });
 
-        } catch (openAIError) {
+        } catch (
+          openAIError
+        ) {
 
           console.error(
             "OpenAI drafting failed."
@@ -1469,7 +1926,8 @@ app.post(
 
         return res.status(503).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "OpenAI is unavailable and Gemini API is not configured."
@@ -1478,10 +1936,6 @@ app.post(
 
       console.log(
         "Generating Letter + Note File using Gemini..."
-      );
-
-      console.log(
-        `Gemini model: ${GEMINI_MODEL}`
       );
 
       const result =
@@ -1496,7 +1950,6 @@ app.post(
           recipient,
 
           subject
-
         });
 
       console.log(
@@ -1505,7 +1958,8 @@ app.post(
 
       return res.json({
 
-        success: true,
+        success:
+          true,
 
         ...result,
 
@@ -1513,10 +1967,13 @@ app.post(
           "Gemini",
 
         model:
+          result._model ||
           GEMINI_MODEL,
 
         fallback:
-          Boolean(openai)
+          Boolean(
+            openai
+          )
       });
 
     } catch (error) {
@@ -1526,13 +1983,7 @@ app.post(
         error
       );
 
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          getErrorMessage(error)
-      });
+      next(error);
     }
   }
 );
@@ -1545,7 +1996,11 @@ app.post(
 app.post(
   "/api/continue",
 
-  async (req, res) => {
+  async (
+    req,
+    res,
+    next
+  ) => {
 
     try {
 
@@ -1571,7 +2026,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Original source text is missing."
@@ -1586,7 +2042,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Previous Letter is missing."
@@ -1601,7 +2058,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Previous Note File is missing."
@@ -1616,7 +2074,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Continue / Alter Command is required."
@@ -1659,7 +2118,6 @@ app.post(
               recipient,
 
               subject
-
             });
 
           console.log(
@@ -1668,7 +2126,8 @@ app.post(
 
           return res.json({
 
-            success: true,
+            success:
+              true,
 
             ...result,
 
@@ -1682,7 +2141,9 @@ app.post(
               false
           });
 
-        } catch (openAIError) {
+        } catch (
+          openAIError
+        ) {
 
           console.error(
             "OpenAI Continue / Alter failed."
@@ -1737,7 +2198,8 @@ app.post(
 
         return res.status(503).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "OpenAI is unavailable and Gemini API is not configured."
@@ -1746,10 +2208,6 @@ app.post(
 
       console.log(
         "Generating revised draft using Gemini..."
-      );
-
-      console.log(
-        `Gemini model: ${GEMINI_MODEL}`
       );
 
       const result =
@@ -1768,7 +2226,6 @@ app.post(
           recipient,
 
           subject
-
         });
 
       console.log(
@@ -1777,7 +2234,8 @@ app.post(
 
       return res.json({
 
-        success: true,
+        success:
+          true,
 
         ...result,
 
@@ -1785,10 +2243,13 @@ app.post(
           "Gemini",
 
         model:
+          result._model ||
           GEMINI_MODEL,
 
         fallback:
-          Boolean(openai)
+          Boolean(
+            openai
+          )
       });
 
     } catch (error) {
@@ -1798,13 +2259,7 @@ app.post(
         error
       );
 
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          getErrorMessage(error)
-      });
+      next(error);
     }
   }
 );
@@ -1837,7 +2292,7 @@ function textToParagraphs(
   return cleaned
     .split(/\n/)
     .map(
-      (line) => {
+      line => {
 
         return new Paragraph({
 
@@ -1937,7 +2392,11 @@ async function createWordDocument({
 app.post(
   "/api/download-word",
 
-  async (req, res) => {
+  async (
+    req,
+    res,
+    next
+  ) => {
 
     try {
 
@@ -1954,7 +2413,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Letter is missing."
@@ -1969,7 +2429,8 @@ app.post(
 
         return res.status(400).json({
 
-          success: false,
+          success:
+            false,
 
           message:
             "Note File is missing."
@@ -2013,13 +2474,7 @@ app.post(
         error
       );
 
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          "Word file generation failed."
-      });
+      next(error);
     }
   }
 );
@@ -2030,11 +2485,15 @@ app.post(
 
 app.use(
   "/api",
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
 
     return res.status(404).json({
 
-      success: false,
+      success:
+        false,
 
       message:
         "API endpoint not found.",
@@ -2063,23 +2522,28 @@ app.use(
     );
 
     // -------------------------------------------------
-    // Multer file size
+    // Multer
     // -------------------------------------------------
 
     if (
       error instanceof
-        multer.MulterError &&
-      error.code ===
-        "LIMIT_FILE_SIZE"
+        multer.MulterError
     ) {
 
-      return res.status(413).json({
+      if (
+        error.code ===
+        "LIMIT_FILE_SIZE"
+      ) {
 
-        success: false,
+        return res.status(413).json({
 
-        message:
-          `PDF is too large. Maximum allowed size is ${MAX_PDF_MB} MB.`
-      });
+          success:
+            false,
+
+          message:
+            `PDF is too large. Maximum allowed size is ${MAX_PDF_MB} MB.`
+        });
+      }
     }
 
     // -------------------------------------------------
@@ -2087,16 +2551,20 @@ app.use(
     // -------------------------------------------------
 
     if (
-      error.message ===
-      "Origin is not allowed by CORS."
+      String(
+        error.message || ""
+      ).startsWith(
+        "CORS blocked"
+      )
     ) {
 
       return res.status(403).json({
 
-        success: false,
+        success:
+          false,
 
         message:
-          "Frontend origin is not allowed."
+          error.message
       });
     }
 
@@ -2111,7 +2579,8 @@ app.use(
 
       return res.status(400).json({
 
-        success: false,
+        success:
+          false,
 
         message:
           error.message
@@ -2122,48 +2591,22 @@ app.use(
     // Generic
     // -------------------------------------------------
 
-    return res.status(500).json({
+    return res.status(
+      error.status ||
+      500
+    ).json({
 
-      success: false,
+      success:
+        false,
 
       message:
-        getErrorMessage(error)
+        getErrorMessage(
+          error
+        )
     });
   }
 );
 
-
-app.get("/api/gemini-models", async (req, res) => {
-  try {
-    const models = [];
-
-    for await (const model of gemini.models.list()) {
-      if (
-        model.supportedActions &&
-        model.supportedActions.includes("generateContent")
-      ) {
-        models.push({
-          name: model.name,
-          displayName: model.displayName,
-          supportedActions: model.supportedActions
-        });
-      }
-    }
-
-    res.json({
-      success: true,
-      models
-    });
-
-  } catch (error) {
-    console.error("Gemini model list error:", error);
-
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
 // =====================================================
 // START SERVER
 // =====================================================
@@ -2214,6 +2657,15 @@ const server =
 
       console.log(
         `Gemini Model  : ${GEMINI_MODEL}`
+      );
+
+      console.log(
+        `Gemini Fallbacks : ${
+          GEMINI_FALLBACK_MODELS.join(
+            ", "
+          ) ||
+          "None"
+        }`
       );
 
       console.log(
@@ -2282,115 +2734,14 @@ function shutdown(
   );
 }
 
-process.on(
+process.once(
   "SIGTERM",
-  () => shutdown("SIGTERM")
+  () =>
+    shutdown("SIGTERM")
 );
 
-process.on(
+process.once(
   "SIGINT",
-  () => shutdown("SIGINT")
-);
-/* =====================================================
-   API 404
-   ===================================================== */
-
-app.use((req, res) => {
-
-  res.status(404).json({
-    success: false,
-    message: "API route not found."
-  });
-
-});
-
-
-/* =====================================================
-   GLOBAL ERROR HANDLER
-   ===================================================== */
-
-app.use((err, req, res, next) => {
-
-  console.error("Server error:", err);
-
-
-  if (err.code === "LIMIT_FILE_SIZE") {
-
-    return res.status(413).json({
-      success: false,
-      message: "PDF file is too large."
-    });
-
-  }
-
-
-  if (err.message &&
-      err.message.startsWith("CORS blocked")) {
-
-    return res.status(403).json({
-      success: false,
-      message: err.message
-    });
-
-  }
-
-
-  res.status(
-    err.status || 500
-  ).json({
-
-    success: false,
-
-    message:
-      err.message ||
-      "Internal server error."
-
-  });
-
-});
-
-
-/* =====================================================
-   START SERVER
-   ===================================================== */
-
-
-
-/* =====================================================
-   GRACEFUL SHUTDOWN
-   ===================================================== */
-
-process.on(
-  "SIGTERM",
-  () => {
-
-    console.log(
-      "SIGTERM received. Closing server..."
-    );
-
-    server.close(
-      () => {
-        process.exit(0);
-      }
-    );
-
-  }
-);
-
-
-process.on(
-  "SIGINT",
-  () => {
-
-    console.log(
-      "SIGINT received. Closing server..."
-    );
-
-    server.close(
-      () => {
-        process.exit(0);
-      }
-    );
-
-  }
+  () =>
+    shutdown("SIGINT")
 );
