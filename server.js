@@ -95,12 +95,20 @@ const allowedOrigins =
     .map(origin => origin.trim())
     .filter(Boolean);
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+
+  "https://tngovtservants.com",
+  "https://www.tngovtservants.com",
+
+  "https://tngovtservants-884498310.development.catalystserverless.com"
+];
+
 const corsOptions = {
 
-  origin: function (
-    origin,
-    callback
-  ) {
+  origin: function (origin, callback) {
 
     // No Origin header
     if (!origin) {
@@ -113,33 +121,20 @@ const corsOptions = {
     }
 
     // Allow wildcard
-    if (
-      allowedOrigins.includes("*")
-    ) {
+    if (allowedOrigins.includes("*")) {
       return callback(null, true);
     }
 
     // Exact allowed origin
-    if (
-      allowedOrigins.includes(origin)
-    ) {
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    console.log(
-      "CORS blocked origin:",
-      origin
-    );
-
-    console.log(
-      "Allowed origins:",
-      allowedOrigins
-    );
+    console.log("CORS blocked:", origin);
+    console.log("Allowed origins:", allowedOrigins);
 
     return callback(
-      new Error(
-        `CORS blocked origin: ${origin}`
-      )
+      new Error(`CORS blocked origin: ${origin}`)
     );
   },
 
@@ -157,10 +152,7 @@ const corsOptions = {
   credentials: false
 };
 
-app.use(
-  cors(corsOptions)
-);
-
+app.use(cors(corsOptions));
 // =====================================================
 // SECURITY
 // =====================================================
