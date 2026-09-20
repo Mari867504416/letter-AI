@@ -4,7 +4,6 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const multer = require("multer");
-const path = require("path");
 
 const { GoogleGenAI } = require("@google/genai");
 const OpenAI = require("openai");
@@ -27,7 +26,7 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-const PORT = process.env.PORT || 10000;
+const PORT = Number(process.env.PORT || 10000);
 
 // =====================================================
 // ENVIRONMENT
@@ -37,19 +36,24 @@ const GEMINI_API_KEY =
   process.env.GEMINI_API_KEY || "";
 
 const GEMINI_MODEL =
-  process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  process.env.GEMINI_MODEL ||
+  "gemini-3-flash-preview";
 
 const OPENAI_API_KEY =
   process.env.OPENAI_API_KEY || "";
 
 const OPENAI_MODEL =
-  process.env.OPENAI_MODEL || "gpt-5.6-terra";
+  process.env.OPENAI_MODEL ||
+  "gpt-5.6-terra";
 
 const MAX_PDF_MB =
   Number(process.env.MAX_PDF_MB || 20);
 
 const MAX_SOURCE_CHARS =
   Number(process.env.MAX_SOURCE_CHARS || 120000);
+
+const FRONTEND_ORIGIN =
+  process.env.FRONTEND_ORIGIN || "";
 
 // =====================================================
 // CLIENTS
@@ -68,7 +72,63 @@ const openai = OPENAI_API_KEY
   : null;
 
 // =====================================================
-// MIDDLEWARE
+// CORS
+// =====================================================
+
+const allowedOrigins = FRONTEND_ORIGIN
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+
+  origin: function (origin, callback) {
+
+    // Allow requests without Origin header
+    // such as Postman/server-to-server.
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Temporary wildcard support.
+    if (allowedOrigins.includes("*")) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log(
+      "Blocked CORS origin:",
+      origin
+    );
+
+    return callback(
+      new Error(
+        "Origin is not allowed by CORS."
+      )
+    );
+  },
+
+  methods: [
+    "GET",
+    "POST",
+    "OPTIONS"
+  ],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization"
+  ],
+
+  credentials: false,
+
+  optionsSuccessStatus: 204
+};
+
+// =====================================================
+// SECURITY
 // =====================================================
 
 app.use(
@@ -77,12 +137,16 @@ app.use(
   })
 );
 
-app.use(
-  cors({
-    origin:
-      process.env.FRONTEND_ORIGIN || "*"
-  })
+app.use(cors(corsOptions));
+
+app.options(
+  "*",
+  cors(corsOptions)
 );
+
+// =====================================================
+// BODY PARSERS
+// =====================================================
 
 app.use(
   express.json({
@@ -92,7 +156,8 @@ app.use(
 
 app.use(
   express.urlencoded({
-    extended: true
+    extended: true,
+    limit: "15mb"
   })
 );
 
@@ -101,11 +166,16 @@ app.use(
 // =====================================================
 
 const upload = multer({
-  storage: multer.memoryStorage(),
+
+  storage:
+    multer.memoryStorage(),
 
   limits: {
+
     fileSize:
-      MAX_PDF_MB * 1024 * 1024
+      MAX_PDF_MB *
+      1024 *
+      1024
   },
 
   fileFilter: (
@@ -122,6 +192,7 @@ const upload = multer({
         .endsWith(".pdf");
 
     if (!isPDF) {
+
       return cb(
         new Error(
           "PDF files only are allowed."
@@ -152,19 +223,29 @@ function cleanText(value) {
     .trim();
 }
 
+// -----------------------------------------------------
+
 function limitText(
   value,
   max = MAX_SOURCE_CHARS
 ) {
 
-  const text = cleanText(value);
+  const text =
+    cleanText(value);
 
-  if (text.length <= max) {
+  if (
+    text.length <= max
+  ) {
     return text;
   }
 
-  return text.substring(0, max);
+  return text.substring(
+    0,
+    max
+  );
 }
+
+// -----------------------------------------------------
 
 function ensureConfigured(
   client,
@@ -172,10 +253,22 @@ function ensureConfigured(
 ) {
 
   if (!client) {
+
     throw new Error(
       `${name} API key is not configured in environment variables.`
     );
   }
+}
+
+// -----------------------------------------------------
+
+function getErrorMessage(error) {
+
+  return (
+    error?.message ||
+    String(error) ||
+    "Unknown error"
+  );
 }
 
 // =====================================================
@@ -300,6 +393,65 @@ IMPORTANT RULES:
 18. The output must contain the complete revised
     Letter and complete revised Note File.
 
+19. Do not add facts merely to make the draft appear
+    complete.
+
+20. Maintain official abbreviations and terminology
+    where supported by the source.
+
+`;
+
+// =====================================================
+// CONTINUE / ALTER INSTRUCTION
+// =====================================================
+
+const OPENAI_CONTINUE_SYSTEM_INSTRUCTION = `
+
+You are an expert official drafting assistant for the
+Tamil Nadu Revenue Department and District Collectorate.
+
+You are performing a Continue / Alter operation.
+
+Revise the previous Letter and Note File according
+to the latest explicit command.
+
+RULES:
+
+1. Preserve all valid original facts.
+
+2. Apply the latest Continue / Alter command.
+
+3. Remove information only when specifically instructed.
+
+4. Add only information supported by the original
+   source or the latest command.
+
+5. Do NOT invent facts.
+
+6. Do NOT invent Government Orders.
+
+7. Do NOT search for Government Orders.
+
+8. Do NOT introduce unrelated references.
+
+9. Preserve names, dates, amounts, file numbers,
+   proceedings numbers and official terminology.
+
+10. If information is missing, use placeholders.
+
+11. Return the COMPLETE revised Letter.
+
+12. Return the COMPLETE revised Note File.
+
+13. Do not return only changed portions.
+
+14. Use formal Tamil Nadu Government / Collectorate
+    drafting style.
+
+15. Do not mention AI.
+
+16. Return only the required structured JSON.
+
 `;
 
 // =====================================================
@@ -353,7 +505,8 @@ IMPORTANT:
 16. Do not translate.
 17. Do not add information.
 18. Do not create missing information.
-19. If a word is genuinely unreadable, write [ILLEGIBLE].
+19. If a word is genuinely unreadable,
+    write [ILLEGIBLE].
 20. Return ONLY the extracted/transcribed text.
 
 Start from page 1 and continue through the last page.
@@ -389,7 +542,8 @@ Start from page 1 and continue through the last page.
 
         temperature: 0,
 
-        maxOutputTokens: 30000
+        maxOutputTokens:
+          30000
       }
     });
 
@@ -413,11 +567,13 @@ Start from page 1 and continue through the last page.
 // =====================================================
 
 async function generateDraftWithOpenAI({
+
   sourceText,
   workCommand,
   language,
   recipient,
   subject
+
 }) {
 
   ensureConfigured(
@@ -527,15 +683,17 @@ Return JSON according to the required schema.
 }
 
 // =====================================================
-// GEMINI DRAFTING FALLBACK
+// GEMINI DRAFTING
 // =====================================================
 
 async function generateDraftWithGemini({
+
   sourceText,
   workCommand,
   language,
   recipient,
   subject
+
 }) {
 
   ensureConfigured(
@@ -572,8 +730,6 @@ ${limitText(
 Prepare the complete official Letter
 and complete official Note File.
 
-Return ONLY JSON matching the supplied schema.
-
 `;
 
   const response =
@@ -589,7 +745,8 @@ Return ONLY JSON matching the supplied schema.
 
         temperature: 0,
 
-        maxOutputTokens: 30000,
+        maxOutputTokens:
+          30000,
 
         responseMimeType:
           "application/json",
@@ -637,129 +794,11 @@ Return ONLY JSON matching the supplied schema.
 }
 
 // =====================================================
-// OPENAI FALLBACK ERROR DETECTION
+// OPENAI CONTINUE / ALTER
 // =====================================================
 
-function shouldFallbackToGemini(
-  error
-) {
+async function alterDraftWithOpenAI({
 
-  if (!error) {
-    return false;
-  }
-
-  const status =
-    error.status ||
-    error.statusCode;
-
-  const code =
-    String(
-      error.code || ""
-    ).toLowerCase();
-
-  const message =
-    String(
-      error.message || ""
-    ).toLowerCase();
-
-  // -----------------------------------------------
-  // Credit / quota / billing / rate limit
-  // -----------------------------------------------
-
-  if (
-    status === 429
-  ) {
-    return true;
-  }
-
-  if (
-    code.includes(
-      "insufficient_quota"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    code.includes(
-      "quota"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    code.includes(
-      "billing"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    message.includes(
-      "insufficient_quota"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    message.includes(
-      "credit_balance_exhausted"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    message.includes(
-      "insufficient credit"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    message.includes(
-      "quota"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    message.includes(
-      "billing"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    message.includes(
-      "rate limit"
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    message.includes(
-      "exceeded your current quota"
-    )
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
-// =====================================================
-// GEMINI CONTINUE / ALTER
-// =====================================================
-
-async function alterDraftWithGemini({
   sourceText,
   previousLetter,
   previousNoteFile,
@@ -767,18 +806,15 @@ async function alterDraftWithGemini({
   language,
   recipient,
   subject
+
 }) {
 
   ensureConfigured(
-    gemini,
-    "Gemini"
+    openai,
+    "OpenAI"
   );
 
   const prompt = `
-
-${DRAFTING_SYSTEM_INSTRUCTION}
-
-This is a Continue / Alter operation.
 
 LANGUAGE:
 ${language || "English"}
@@ -791,7 +827,10 @@ ${subject || "[Subject]"}
 
 ORIGINAL SOURCE:
 ================
-${limitText(sourceText)}
+${limitText(
+  sourceText,
+  MAX_SOURCE_CHARS
+)}
 ================
 
 PREVIOUS LETTER:
@@ -818,36 +857,158 @@ ${limitText(
 )}
 =============================
 
+Revise the previous Letter and Note File according
+to the new command.
+
 IMPORTANT:
 
-1. Keep all valid original facts.
+- Keep all valid original facts.
+- Apply the new command.
+- Remove information if specifically instructed.
+- Add only information supported by the source or command.
+- Do not invent facts.
+- Do not search for Government Orders.
+- Do not introduce unrelated Government Orders.
+- Preserve names, dates, amounts and references.
+- Return complete revised Letter.
+- Return complete revised Note File.
+- Do not return only changed portions.
 
-2. Apply the new command.
+`;
 
-3. Remove information only if specifically
-   instructed.
+  const response =
+    await openai.responses.create({
 
-4. Add only information supported by the
-   source or command.
+      model:
+        OPENAI_MODEL,
 
-5. Do not invent facts.
+      instructions:
+        OPENAI_CONTINUE_SYSTEM_INSTRUCTION,
 
-6. Do not search for Government Orders.
+      input:
+        prompt,
 
-7. Do not introduce unrelated Government Orders.
+      text: {
 
-8. Preserve names, dates, amounts and references.
+        format: {
 
-9. Prepare the COMPLETE revised Letter.
+          type:
+            "json_schema",
 
-10. Prepare the COMPLETE revised Note File.
+          name:
+            "revenue_drafting_output",
 
-11. Do not return only changed portions.
+          strict:
+            true,
 
-12. Use formal Tamil Nadu Government /
-    Collectorate drafting style.
+          schema:
+            draftingSchema
+        }
+      }
+    });
 
-13. Do not mention AI.
+  const raw =
+    cleanText(
+      response.output_text || ""
+    );
+
+  if (!raw) {
+
+    throw new Error(
+      "OpenAI did not return a revised draft."
+    );
+  }
+
+  let result;
+
+  try {
+
+    result =
+      JSON.parse(raw);
+
+  } catch (error) {
+
+    console.error(
+      "OpenAI revised JSON parse error:",
+      raw.substring(
+        0,
+        2000
+      )
+    );
+
+    throw new Error(
+      "OpenAI returned invalid revised draft JSON."
+    );
+  }
+
+  return result;
+}
+
+// =====================================================
+// GEMINI CONTINUE / ALTER
+// =====================================================
+
+async function alterDraftWithGemini({
+
+  sourceText,
+  previousLetter,
+  previousNoteFile,
+  alterCommand,
+  language,
+  recipient,
+  subject
+
+}) {
+
+  ensureConfigured(
+    gemini,
+    "Gemini"
+  );
+
+  const prompt = `
+
+${OPENAI_CONTINUE_SYSTEM_INSTRUCTION}
+
+LANGUAGE:
+${language || "English"}
+
+RECIPIENT:
+${recipient || "[Recipient]"}
+
+SUBJECT:
+${subject || "[Subject]"}
+
+ORIGINAL SOURCE:
+================
+${limitText(
+  sourceText,
+  MAX_SOURCE_CHARS
+)}
+================
+
+PREVIOUS LETTER:
+================
+${limitText(
+  previousLetter,
+  60000
+)}
+================
+
+PREVIOUS NOTE FILE:
+===================
+${limitText(
+  previousNoteFile,
+  60000
+)}
+===================
+
+NEW CONTINUE / ALTER COMMAND:
+=============================
+${limitText(
+  alterCommand,
+  30000
+)}
+=============================
 
 Return ONLY JSON matching the supplied schema.
 
@@ -866,7 +1027,8 @@ Return ONLY JSON matching the supplied schema.
 
         temperature: 0,
 
-        maxOutputTokens: 30000,
+        maxOutputTokens:
+          30000,
 
         responseMimeType:
           "application/json",
@@ -914,138 +1076,69 @@ Return ONLY JSON matching the supplied schema.
 }
 
 // =====================================================
-// OPENAI CONTINUE / ALTER
+// OPENAI FALLBACK ERROR DETECTION
 // =====================================================
 
-async function alterDraftWithOpenAI({
-  sourceText,
-  previousLetter,
-  previousNoteFile,
-  alterCommand,
-  language,
-  recipient,
-  subject
-}) {
+function shouldFallbackToGemini(
+  error
+) {
 
-  ensureConfigured(
-    openai,
-    "OpenAI"
+  if (!error) {
+    return false;
+  }
+
+  const status =
+    error.status ||
+    error.statusCode;
+
+  const code =
+    String(
+      error.code || ""
+    ).toLowerCase();
+
+  const message =
+    String(
+      error.message || ""
+    ).toLowerCase();
+
+  // ---------------------------------------------------
+  // HTTP 429
+  // ---------------------------------------------------
+
+  if (status === 429) {
+    return true;
+  }
+
+  // ---------------------------------------------------
+  // Quota / billing
+  // ---------------------------------------------------
+
+  const fallbackKeywords = [
+
+    "insufficient_quota",
+
+    "credit_balance_exhausted",
+
+    "insufficient credit",
+
+    "quota",
+
+    "billing",
+
+    "rate limit",
+
+    "rate_limit",
+
+    "exceeded your current quota",
+
+    "too many requests"
+  ];
+
+  return fallbackKeywords.some(
+    (keyword) =>
+      code.includes(keyword) ||
+      message.includes(keyword)
   );
-
-  const prompt = `
-
-LANGUAGE:
-${language || "English"}
-
-RECIPIENT:
-${recipient || "[Recipient]"}
-
-SUBJECT:
-${subject || "[Subject]"}
-
-ORIGINAL SOURCE:
-================
-${limitText(sourceText)}
-================
-
-PREVIOUS LETTER:
-================
-${limitText(
-  previousLetter,
-  60000
-)}
-================
-
-PREVIOUS NOTE FILE:
-===================
-${limitText(
-  previousNoteFile,
-  60000
-)}
-===================
-
-NEW CONTINUE / ALTER COMMAND:
-=============================
-${limitText(
-  alterCommand,
-  30000
-)}
-=============================
-
-Revise the previous Letter and Note File according
-to the new command.
-
-IMPORTANT:
-
-- Keep all valid original facts.
-- Apply the new command.
-- Remove information if specifically instructed.
-- Add only information supported by the source or command.
-- Do not invent facts.
-- Do not search or introduce unrelated Government Orders.
-- Return complete revised Letter and complete revised Note File.
-- Do not return only the changed paragraph.
-
-`;
-
-  const response =
-    await openai.responses.create({
-
-      model:
-        OPENAI_MODEL,
-
-      instructions:
-        OPENAI_SYSTEM_INSTRUCTION,
-
-      input:
-        prompt,
-
-      text: {
-
-        format: {
-
-          type:
-            "json_schema",
-
-          name:
-            "revenue_drafting_output",
-
-          strict:
-            true,
-
-          schema:
-            draftingSchema
-        }
-      }
-    });
-
-  const raw =
-    cleanText(
-      response.output_text || ""
-    );
-
-  if (!raw) {
-
-    throw new Error(
-      "OpenAI did not return a revised draft."
-    );
-  }
-
-  let result;
-
-  try {
-
-    result =
-      JSON.parse(raw);
-
-  } catch (error) {
-
-    throw new Error(
-      "OpenAI returned invalid revised draft JSON."
-    );
-  }
-
-  return result;
 }
 
 // =====================================================
@@ -1061,11 +1154,13 @@ app.get(
       success: true,
 
       service:
-        "Revenue Office Drafting Assistant",
+        "Revenue Office Drafting Assistant API",
 
-      // -------------------------------------------
-      // API configuration
-      // -------------------------------------------
+      backend:
+        "Render",
+
+      frontend:
+        "Catalyst",
 
       geminiConfigured:
         Boolean(
@@ -1077,19 +1172,11 @@ app.get(
           OPENAI_API_KEY
         ),
 
-      // -------------------------------------------
-      // Models
-      // -------------------------------------------
-
       geminiModel:
         GEMINI_MODEL,
 
       openaiModel:
         OPENAI_MODEL,
-
-      // -------------------------------------------
-      // Capabilities
-      // -------------------------------------------
 
       pdfOCR:
         Boolean(
@@ -1116,6 +1203,14 @@ app.get(
         Boolean(
           OPENAI_API_KEY &&
           GEMINI_API_KEY
+        ),
+
+      wordGeneration:
+        true,
+
+      frontendConfigured:
+        Boolean(
+          FRONTEND_ORIGIN
         ),
 
       timestamp:
@@ -1153,7 +1248,13 @@ app.post(
       );
 
       console.log(
-        `PDF size: ${(req.file.size / 1024 / 1024).toFixed(2)} MB`
+        `PDF size: ${
+          (
+            req.file.size /
+            1024 /
+            1024
+          ).toFixed(2)
+        } MB`
       );
 
       console.log(
@@ -1174,7 +1275,7 @@ app.post(
         `Gemini extraction completed. Characters: ${limitedText.length}`
       );
 
-      res.json({
+      return res.json({
 
         success: true,
 
@@ -1201,13 +1302,12 @@ app.post(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
 
         success: false,
 
         message:
-          error.message ||
-          "PDF extraction failed."
+          getErrorMessage(error)
       });
     }
   }
@@ -1233,9 +1333,9 @@ app.post(
         subject
       } = req.body;
 
-      // ---------------------------------------------
+      // -------------------------------------------------
       // VALIDATION
-      // ---------------------------------------------
+      // -------------------------------------------------
 
       if (
         !cleanText(
@@ -1267,9 +1367,9 @@ app.post(
         });
       }
 
-      // ---------------------------------------------
-      // FIRST: OPENAI
-      // ---------------------------------------------
+      // -------------------------------------------------
+      // OPENAI FIRST
+      // -------------------------------------------------
 
       if (openai) {
 
@@ -1280,7 +1380,7 @@ app.post(
           );
 
           console.log(
-            "🤖 Trying OpenAI for Letter + Note File..."
+            "Trying OpenAI for Letter + Note File..."
           );
 
           console.log(
@@ -1299,10 +1399,11 @@ app.post(
               recipient,
 
               subject
+
             });
 
           console.log(
-            "✅ OpenAI drafting successful."
+            "OpenAI drafting successful."
           );
 
           return res.json({
@@ -1324,7 +1425,7 @@ app.post(
         } catch (openAIError) {
 
           console.error(
-            "❌ OpenAI drafting failed."
+            "OpenAI drafting failed."
           );
 
           console.error(
@@ -1342,13 +1443,10 @@ app.post(
 
           console.error(
             "OpenAI message:",
-            openAIError.message ||
-            openAIError
+            getErrorMessage(
+              openAIError
+            )
           );
-
-          // -----------------------------------------
-          // FALLBACK CHECK
-          // -----------------------------------------
 
           if (
             shouldFallbackToGemini(
@@ -1357,28 +1455,23 @@ app.post(
           ) {
 
             console.log(
-              "⚠️ OpenAI credit/quota/billing unavailable."
+              "OpenAI quota/billing/rate limit detected."
             );
 
             console.log(
-              "🔄 Automatically switching to Gemini..."
+              "Switching automatically to Gemini..."
             );
 
           } else {
-
-            // ---------------------------------------
-            // Other OpenAI errors should NOT be
-            // hidden by Gemini.
-            // ---------------------------------------
 
             throw openAIError;
           }
         }
       }
 
-      // ---------------------------------------------
-      // SECOND: GEMINI FALLBACK
-      // ---------------------------------------------
+      // -------------------------------------------------
+      // GEMINI FALLBACK
+      // -------------------------------------------------
 
       if (!gemini) {
 
@@ -1392,7 +1485,7 @@ app.post(
       }
 
       console.log(
-        "🤖 Generating Letter + Note File using Gemini..."
+        "Generating Letter + Note File using Gemini..."
       );
 
       console.log(
@@ -1411,10 +1504,11 @@ app.post(
           recipient,
 
           subject
+
         });
 
       console.log(
-        "✅ Gemini fallback drafting successful."
+        "Gemini drafting successful."
       );
 
       return res.json({
@@ -1430,7 +1524,7 @@ app.post(
           GEMINI_MODEL,
 
         fallback:
-          true
+          Boolean(openai)
       });
 
     } catch (error) {
@@ -1440,13 +1534,12 @@ app.post(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
 
         success: false,
 
         message:
-          error.message ||
-          "Draft generation failed."
+          getErrorMessage(error)
       });
     }
   }
@@ -1474,9 +1567,9 @@ app.post(
         subject
       } = req.body;
 
-      // ---------------------------------------------
+      // -------------------------------------------------
       // VALIDATION
-      // ---------------------------------------------
+      // -------------------------------------------------
 
       if (
         !cleanText(
@@ -1538,9 +1631,9 @@ app.post(
         });
       }
 
-      // ---------------------------------------------
-      // FIRST: OPENAI
-      // ---------------------------------------------
+      // -------------------------------------------------
+      // OPENAI FIRST
+      // -------------------------------------------------
 
       if (openai) {
 
@@ -1551,7 +1644,7 @@ app.post(
           );
 
           console.log(
-            "🤖 Trying OpenAI for Continue / Alter..."
+            "Trying OpenAI for Continue / Alter..."
           );
 
           console.log(
@@ -1574,10 +1667,11 @@ app.post(
               recipient,
 
               subject
+
             });
 
           console.log(
-            "✅ OpenAI Continue / Alter successful."
+            "OpenAI Continue / Alter successful."
           );
 
           return res.json({
@@ -1599,7 +1693,7 @@ app.post(
         } catch (openAIError) {
 
           console.error(
-            "❌ OpenAI Continue / Alter failed."
+            "OpenAI Continue / Alter failed."
           );
 
           console.error(
@@ -1617,8 +1711,9 @@ app.post(
 
           console.error(
             "OpenAI message:",
-            openAIError.message ||
-            openAIError
+            getErrorMessage(
+              openAIError
+            )
           );
 
           if (
@@ -1628,11 +1723,11 @@ app.post(
           ) {
 
             console.log(
-              "⚠️ OpenAI credit/quota/billing unavailable."
+              "OpenAI quota/billing/rate limit detected."
             );
 
             console.log(
-              "🔄 Switching Continue / Alter to Gemini..."
+              "Switching Continue / Alter to Gemini..."
             );
 
           } else {
@@ -1642,9 +1737,9 @@ app.post(
         }
       }
 
-      // ---------------------------------------------
-      // SECOND: GEMINI
-      // ---------------------------------------------
+      // -------------------------------------------------
+      // GEMINI FALLBACK
+      // -------------------------------------------------
 
       if (!gemini) {
 
@@ -1658,7 +1753,11 @@ app.post(
       }
 
       console.log(
-        "🤖 Generating revised draft using Gemini..."
+        "Generating revised draft using Gemini..."
+      );
+
+      console.log(
+        `Gemini model: ${GEMINI_MODEL}`
       );
 
       const result =
@@ -1677,10 +1776,11 @@ app.post(
           recipient,
 
           subject
+
         });
 
       console.log(
-        "✅ Gemini Continue / Alter successful."
+        "Gemini Continue / Alter successful."
       );
 
       return res.json({
@@ -1696,7 +1796,7 @@ app.post(
           GEMINI_MODEL,
 
         fallback:
-          true
+          Boolean(openai)
       });
 
     } catch (error) {
@@ -1706,20 +1806,19 @@ app.post(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
 
         success: false,
 
         message:
-          error.message ||
-          "Continue / Alter failed."
+          getErrorMessage(error)
       });
     }
   }
 );
 
 // =====================================================
-// WORD GENERATION
+// WORD HELPERS
 // =====================================================
 
 function textToParagraphs(
@@ -1773,8 +1872,10 @@ function textToParagraphs(
 // =====================================================
 
 async function createWordDocument({
+
   letter,
   noteFile
+
 }) {
 
   const document =
@@ -1854,7 +1955,9 @@ app.post(
       } = req.body;
 
       if (
-        !cleanText(letter)
+        !cleanText(
+          letter
+        )
       ) {
 
         return res.status(400).json({
@@ -1867,7 +1970,9 @@ app.post(
       }
 
       if (
-        !cleanText(noteFile)
+        !cleanText(
+          noteFile
+        )
       ) {
 
         return res.status(400).json({
@@ -1900,7 +2005,14 @@ app.post(
         `attachment; filename="${filename}"`
       );
 
-      res.send(buffer);
+      res.setHeader(
+        "Content-Length",
+        buffer.length
+      );
+
+      return res.send(
+        buffer
+      );
 
     } catch (error) {
 
@@ -1909,7 +2021,7 @@ app.post(
         error
       );
 
-      res.status(500).json({
+      return res.status(500).json({
 
         success: false,
 
@@ -1921,37 +2033,28 @@ app.post(
 );
 
 // =====================================================
-// FRONTEND
+// API 404
 // =====================================================
 
 app.use(
-  express.static(
-    path.join(
-      __dirname,
-      "public"
-    )
-  )
-);
-
-// =====================================================
-// SPA FALLBACK
-// =====================================================
-
-app.use(
+  "/api",
   (req, res) => {
 
-    res.sendFile(
-      path.join(
-        __dirname,
-        "public",
-        "index.html"
-      )
-    );
+    return res.status(404).json({
+
+      success: false,
+
+      message:
+        "API endpoint not found.",
+
+      path:
+        req.originalUrl
+    });
   }
 );
 
 // =====================================================
-// ERROR HANDLER
+// GLOBAL ERROR HANDLER
 // =====================================================
 
 app.use(
@@ -1966,6 +2069,10 @@ app.use(
       "Server error:",
       error
     );
+
+    // -------------------------------------------------
+    // Multer file size
+    // -------------------------------------------------
 
     if (
       error instanceof
@@ -1983,77 +2090,180 @@ app.use(
       });
     }
 
-    res.status(500).json({
+    // -------------------------------------------------
+    // CORS
+    // -------------------------------------------------
+
+    if (
+      error.message ===
+      "Origin is not allowed by CORS."
+    ) {
+
+      return res.status(403).json({
+
+        success: false,
+
+        message:
+          "Frontend origin is not allowed."
+      });
+    }
+
+    // -------------------------------------------------
+    // PDF validation
+    // -------------------------------------------------
+
+    if (
+      error.message ===
+      "PDF files only are allowed."
+    ) {
+
+      return res.status(400).json({
+
+        success: false,
+
+        message:
+          error.message
+      });
+    }
+
+    // -------------------------------------------------
+    // Generic
+    // -------------------------------------------------
+
+    return res.status(500).json({
 
       success: false,
 
       message:
-        error.message ||
-        "Internal server error."
+        getErrorMessage(error)
     });
   }
 );
 
 // =====================================================
-// START
+// START SERVER
 // =====================================================
 
-app.listen(
-  PORT,
-  () => {
+const server =
+  app.listen(
+    PORT,
+    () => {
 
-    console.log("");
+      console.log("");
 
-    console.log(
-      "=============================================="
-    );
+      console.log(
+        "=================================================="
+      );
 
-    console.log(
-      " Revenue Office Drafting Assistant"
-    );
+      console.log(
+        " Revenue Office Drafting Assistant API"
+      );
 
-    console.log(
-      "=============================================="
-    );
+      console.log(
+        "=================================================="
+      );
 
-    console.log(
-      `Server running on port ${PORT}`
-    );
+      console.log(
+        `Backend       : Render`
+      );
 
-    console.log(
-      `Gemini configured: ${Boolean(GEMINI_API_KEY)}`
-    );
+      console.log(
+        `Port          : ${PORT}`
+      );
 
-    console.log(
-      `Gemini model: ${GEMINI_MODEL}`
-    );
+      console.log(
+        `Frontend      : Catalyst`
+      );
 
-    console.log(
-      `OpenAI configured: ${Boolean(OPENAI_API_KEY)}`
-    );
+      console.log(
+        `Frontend CORS : ${
+          FRONTEND_ORIGIN ||
+          "NOT CONFIGURED"
+        }`
+      );
 
-    console.log(
-      `OpenAI model: ${OPENAI_MODEL}`
-    );
+      console.log(
+        `Gemini        : ${Boolean(
+          GEMINI_API_KEY
+        )}`
+      );
 
-    console.log(
-      "PDF OCR: Gemini"
-    );
+      console.log(
+        `Gemini Model  : ${GEMINI_MODEL}`
+      );
 
-    console.log(
-      "Drafting: OpenAI → Gemini fallback"
-    );
+      console.log(
+        `OpenAI        : ${Boolean(
+          OPENAI_API_KEY
+        )}`
+      );
 
-    console.log(
-      "Continue / Alter: OpenAI → Gemini fallback"
-    );
+      console.log(
+        `OpenAI Model  : ${OPENAI_MODEL}`
+      );
 
-    console.log(
-      "Word generation: Node.js"
-    );
+      console.log(
+        `PDF OCR       : Gemini`
+      );
 
-    console.log(
-      "=============================================="
-    );
-  }
+      console.log(
+        `Drafting      : OpenAI → Gemini fallback`
+      );
+
+      console.log(
+        `Continue      : OpenAI → Gemini fallback`
+      );
+
+      console.log(
+        `Word          : Node.js`
+      );
+
+      console.log(
+        `Max PDF       : ${MAX_PDF_MB} MB`
+      );
+
+      console.log(
+        `Max Source    : ${MAX_SOURCE_CHARS} chars`
+      );
+
+      console.log(
+        "=================================================="
+      );
+
+      console.log("");
+    }
+  );
+
+// =====================================================
+// GRACEFUL SHUTDOWN
+// =====================================================
+
+function shutdown(
+  signal
+) {
+
+  console.log(
+    `${signal} received. Shutting down server...`
+  );
+
+  server.close(
+    () => {
+
+      console.log(
+        "Server closed."
+      );
+
+      process.exit(0);
+    }
+  );
+}
+
+process.on(
+  "SIGTERM",
+  () => shutdown("SIGTERM")
+);
+
+process.on(
+  "SIGINT",
+  () => shutdown("SIGINT")
 );
