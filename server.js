@@ -24,9 +24,8 @@ const {
 
 const app = express();
 
-app.set("trust proxy", 1);
 
-const PORT = Number(process.env.PORT || 10000);
+
 
 // =====================================================
 // ENVIRONMENT
