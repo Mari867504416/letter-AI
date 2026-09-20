@@ -81,34 +81,31 @@ const allowedOrigins = FRONTEND_ORIGIN
   .filter(Boolean);
 
 const corsOptions = {
-
   origin: function (origin, callback) {
 
-    // Allow requests without Origin header
-    // such as Postman/server-to-server.
     if (!origin) {
       return callback(null, true);
     }
 
-    // Temporary wildcard support.
-    if (allowedOrigins.includes("*")) {
+    const allowedOrigins =
+      (process.env.FRONTEND_ORIGIN || "")
+        .split(",")
+        .map(origin => origin.trim())
+        .filter(Boolean);
+
+    if (
+      allowedOrigins.includes("*") ||
+      allowedOrigins.includes(origin)
+    ) {
       return callback(null, true);
     }
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    console.log(
-      "Blocked CORS origin:",
-      origin
-    );
 
     return callback(
       new Error(
-        "Origin is not allowed by CORS."
+        `CORS blocked origin: ${origin}`
       )
     );
+
   },
 
   methods: [
@@ -122,11 +119,13 @@ const corsOptions = {
     "Authorization"
   ],
 
-  credentials: false,
-
-  optionsSuccessStatus: 204
+  credentials: false
 };
 
+
+app.use(
+  cors(corsOptions)
+);
 // =====================================================
 // SECURITY
 // =====================================================
