@@ -2132,6 +2132,38 @@ app.use(
   }
 );
 
+
+app.get("/api/gemini-models", async (req, res) => {
+  try {
+    const models = [];
+
+    for await (const model of gemini.models.list()) {
+      if (
+        model.supportedActions &&
+        model.supportedActions.includes("generateContent")
+      ) {
+        models.push({
+          name: model.name,
+          displayName: model.displayName,
+          supportedActions: model.supportedActions
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      models
+    });
+
+  } catch (error) {
+    console.error("Gemini model list error:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 // =====================================================
 // START SERVER
 // =====================================================
