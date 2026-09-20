@@ -24,6 +24,10 @@ const {
 
 const app = express();
 
+app.set("trust proxy", 1);
+
+const PORT = Number(process.env.PORT || 10000);
+
 
 
 
@@ -2327,23 +2331,6 @@ app.use((err, req, res, next) => {
    START SERVER
    ===================================================== */
 
-const PORT =
-  Number(
-    process.env.PORT || 10000
-  );
-
-
-const server =
-  app.listen(
-    PORT,
-    () => {
-
-      console.log(
-        `Revenue Office Drafting Assistant API running on port ${PORT}`
-      );
-
-    }
-  );
 
 
 /* =====================================================
