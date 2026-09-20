@@ -80,9 +80,15 @@ const allowedOrigins = FRONTEND_ORIGIN
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+/* =====================================================
+   CORS
+   ===================================================== */
+
 const corsOptions = {
+
   origin: function (origin, callback) {
 
+    // Allow Postman / server-to-server requests
     if (!origin) {
       return callback(null, true);
     }
@@ -90,15 +96,25 @@ const corsOptions = {
     const allowedOrigins =
       (process.env.FRONTEND_ORIGIN || "")
         .split(",")
-        .map(origin => origin.trim())
+        .map(item => item.trim())
         .filter(Boolean);
 
+
+    // Allow all origins if explicitly configured
     if (
-      allowedOrigins.includes("*") ||
+      allowedOrigins.includes("*")
+    ) {
+      return callback(null, true);
+    }
+
+
+    // Allow configured Catalyst frontend
+    if (
       allowedOrigins.includes(origin)
     ) {
       return callback(null, true);
     }
+
 
     return callback(
       new Error(
@@ -108,18 +124,22 @@ const corsOptions = {
 
   },
 
+
   methods: [
     "GET",
     "POST",
     "OPTIONS"
   ],
 
+
   allowedHeaders: [
     "Content-Type",
     "Authorization"
   ],
 
+
   credentials: false
+
 };
 
 
