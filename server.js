@@ -90,7 +90,13 @@ const allowedOrigins = FRONTEND_ORIGIN
 const corsOptions = {
   origin: function (origin, callback) {
 
+    // Browser sends no Origin header
     if (!origin) {
+      return callback(null, true);
+    }
+
+    // Some Catalyst / file / sandbox environments may send Origin: null
+    if (origin === "null") {
       return callback(null, true);
     }
 
@@ -108,16 +114,15 @@ const corsOptions = {
       return callback(null, true);
     }
 
+    console.log("CORS blocked origin:", origin);
+    console.log("Allowed origins:", allowedOrigins);
+
     return callback(
       new Error(`CORS blocked origin: ${origin}`)
     );
   },
 
-  methods: [
-    "GET",
-    "POST",
-    "OPTIONS"
-  ],
+  methods: ["GET", "POST", "OPTIONS"],
 
   allowedHeaders: [
     "Content-Type",
@@ -126,17 +131,6 @@ const corsOptions = {
 
   credentials: false
 };
-
-app.use(cors(corsOptions));
-// =====================================================
-// SECURITY
-// =====================================================
-
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false
-  })
-);
 
 app.use(cors(corsOptions));
 
