@@ -86,11 +86,16 @@ const openai = OPENAI_API_KEY
 // CORS
 // =====================================================
 
-const allowedOrigins =
-  FRONTEND_ORIGIN
-    .split(",")
-    .map(x => x.trim())
-    .filter(Boolean);
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+
+  "https://tngovtservants.com",
+  "https://www.tngovtservants.com",
+
+  "https://tngovtservants-884498310.development.catalystserverless.com"
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
