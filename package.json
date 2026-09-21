@@ -11,7 +11,7 @@
     "node": "22.23.2"
   },
   "dependencies": {
-    "@google/genai": "^1.0.0",
+    "@google/genai": "^2.23.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "docx": "^9.0.0",
