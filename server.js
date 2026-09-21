@@ -588,69 +588,132 @@ Prepare:
 1. Official Letter
 2. Official Note File
 
-IMPORTANT:
+IMPORTANT RULES:
 
 - Use ONLY the facts supplied by the user.
-- Do NOT invent facts.
-- Do NOT invent Government Orders.
-- Do NOT search for Government Orders.
-- Do NOT invent proceedings numbers.
-- Do NOT invent dates.
-- Do NOT invent names.
-- Do NOT invent amounts.
-- Do NOT invent references.
+- Do NOT invent facts, Government Orders, proceedings numbers,
+  dates, names, amounts, or references.
 
 Missing information must be shown as:
-
-[Name]
-[Designation]
-[Roc.No.]
-[Date]
-[Amount]
-[Reference]
-
-Use formal Tamil Nadu Government / District Collectorate
-official drafting style.
-
-The Letter should be complete.
-
-The Note File should contain:
-
-Background
-References
-Facts
-Action proposed
-Orders requested
-
-For the LETTER:
-
-Preserve logical sections such as:
-
-From
-To
-Roc.No.
-Date
-Subject
-Ref
-Sir/Madam
-Body paragraphs
-Yours faithfully
-Signature
-Enclosure
-//True Copy//
-
-Do not unnecessarily combine separate paragraphs.
-
-Each distinct body paragraph should be separated by
-a blank line.
-
-For Tamil use proper official Tamil.
-
-For English use formal official English.
+[Name] / [Designation] / [Roc.No.] / [Date] / [Amount] / [Reference]
 
 Do not mention AI.
 
 Return only JSON matching the supplied schema.
+
+=======================================================
+OFFICIAL LETTER FORMAT (follow EXACTLY):
+=======================================================
+
+The "letter" field must follow this EXACT structure
+with each section on its own line(s) and a blank line
+between sections:
+
+From
+[Sender Name]
+[Sender Designation]
+[Office Name]
+[Address]
+
+To
+[Recipient Name]
+[Recipient Designation]
+[Office / Department]
+[Address]
+
+Roc.No.[Number]/[Year]
+Date: [DD.MM.YYYY]
+
+Sub: [Subject line] – reg.
+
+Ref: [Reference 1]
+     [Reference 2]
+
+Sir / Madam,
+
+[Opening paragraph – state the purpose clearly.]
+
+[Second paragraph – provide background / details.]
+
+[Third paragraph – state the specific request or action required.]
+
+[Closing paragraph – mention deadline or urgency if applicable.]
+
+Yours faithfully,
+
+
+[Signature]
+[Name]
+[Designation]
+[Office]
+
+Enclosure:
+1. [Enclosure item]
+
+//True Copy//
+
+RULES FOR LETTER:
+- Each section (From, To, Roc.No., Sub, Ref, body paragraphs,
+  closing) must be separated by a blank line.
+- Each body paragraph must be a separate paragraph with a
+  blank line between them.
+- Do NOT merge all body content into a single paragraph.
+- Formal salutation: "Sir / Madam,"
+- Formal closing: "Yours faithfully,"
+- For Tamil: use proper official Tamil letter format with same
+  structure (இருந்து / பெறுநர் / தலைப்பு / ஐயா / தங்கள் உண்மையுள்ள).
+
+=======================================================
+NOTE FILE FORMAT (follow EXACTLY):
+=======================================================
+
+The "note_file" field must follow this EXACT structure:
+
+NOTE FILE
+
+Roc.No.[Number]/[Year]
+Date: [DD.MM.YYYY]
+
+Sub: [Subject] – reg.
+
+1. BACKGROUND:
+
+[Background paragraph describing the context and origin
+of the matter.]
+
+2. REFERENCES:
+
+(i)  [Reference 1 – full description]
+(ii) [Reference 2 – full description]
+
+3. FACTS:
+
+[Paragraph describing the key facts of the matter,
+date-wise if applicable.]
+
+4. ACTION PROPOSED:
+
+[Paragraph describing what action is proposed or what
+letter / communication is being sent.]
+
+5. ORDERS REQUESTED:
+
+Submitted for the kind perusal and orders of the
+[Collector / District Collector / competent authority].
+
+[Submitted by Name]
+[Designation]
+Date: [DD.MM.YYYY]
+
+RULES FOR NOTE FILE:
+- Each numbered section must have a heading in CAPITALS
+  followed by a colon.
+- Each section must be separated by a blank line.
+- References must be listed as (i), (ii), (iii) etc.
+- Do NOT merge all content into a single paragraph.
+- For Tamil: use proper official Tamil note file headings
+  (பின்னணி / குறிப்புகள் / உண்மைகள் / முன்மொழியப்பட்ட நடவடிக்கை /
+   ஆணைகள் வேண்டப்படுகின்றன).
 
 `;
 
@@ -666,33 +729,100 @@ Tamil Nadu Revenue Department and District Collectorate.
 You are revising an existing Letter and Note File.
 
 Preserve all valid facts from the original source.
-
 Apply the new Continue / Alter command.
 
-Do NOT:
+Do NOT invent facts, Government Orders, dates, amounts,
+names, references, or unrelated information.
 
-- invent facts
-- invent Government Orders
-- invent dates
-- invent amounts
-- invent names
-- invent references
-- introduce unrelated information
-
-Return the COMPLETE revised Letter.
-
-Return the COMPLETE revised Note File.
-
+Return the COMPLETE revised Letter and Note File.
 Do not return only changed portions.
-
-Maintain proper logical paragraphs.
-
-Use formal Tamil Nadu Government / District Collectorate
-official drafting style.
-
 Do not mention AI.
 
 Return only JSON matching the supplied schema.
+
+=======================================================
+OFFICIAL LETTER FORMAT (preserve EXACTLY):
+=======================================================
+
+From
+[Sender Name]
+[Sender Designation]
+[Office Name]
+[Address]
+
+To
+[Recipient Name]
+[Recipient Designation]
+[Office / Department]
+[Address]
+
+Roc.No.[Number]/[Year]
+Date: [DD.MM.YYYY]
+
+Sub: [Subject line] – reg.
+
+Ref: [Reference 1]
+     [Reference 2]
+
+Sir / Madam,
+
+[Opening paragraph]
+
+[Second paragraph]
+
+[Third paragraph – specific request]
+
+[Closing paragraph]
+
+Yours faithfully,
+
+
+[Signature]
+[Name]
+[Designation]
+[Office]
+
+Enclosure:
+1. [Enclosure item]
+
+//True Copy//
+
+=======================================================
+NOTE FILE FORMAT (preserve EXACTLY):
+=======================================================
+
+NOTE FILE
+
+Roc.No.[Number]/[Year]
+Date: [DD.MM.YYYY]
+
+Sub: [Subject] – reg.
+
+1. BACKGROUND:
+
+[Background paragraph]
+
+2. REFERENCES:
+
+(i)  [Reference 1]
+(ii) [Reference 2]
+
+3. FACTS:
+
+[Facts paragraph]
+
+4. ACTION PROPOSED:
+
+[Action paragraph]
+
+5. ORDERS REQUESTED:
+
+Submitted for the kind perusal and orders of the
+[competent authority].
+
+[Name]
+[Designation]
+Date: [DD.MM.YYYY]
 
 `;
 
