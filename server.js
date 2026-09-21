@@ -1405,6 +1405,11 @@ app.get(
 // REST API VERSION
 // =====================================================
 
+// =====================================================
+// GEMINI MODEL LIST
+// REST API VERSION
+// =====================================================
+
 app.get(
   "/api/gemini-models",
   async (req, res) => {
@@ -1418,18 +1423,15 @@ app.get(
           message:
             "GEMINI_API_KEY is not configured."
         });
+
       }
 
-      const response =
-        await fetch(
-          "https://generativelanguage.googleapis.com/v1beta/models?key=" +
-          encodeURIComponent(
-            GEMINI_API_KEY
-          )
-        );
+      const response = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models?key=" +
+        encodeURIComponent(GEMINI_API_KEY)
+      );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
 
@@ -1438,9 +1440,7 @@ app.get(
           data
         );
 
-        return res.status(
-          response.status
-        ).json({
+        return res.status(response.status).json({
 
           success: false,
 
