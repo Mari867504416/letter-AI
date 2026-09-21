@@ -13,9 +13,9 @@ const {
   Packer,
   Paragraph,
   TextRun,
-  HeadingLevel,
   AlignmentType,
-  PageBreak
+  PageBreak,
+  HeadingLevel
 } = require("docx");
 
 // =====================================================
@@ -42,11 +42,10 @@ const GEMINI_MODEL =
   "gemini-3.6-flash";
 
 const GEMINI_FALLBACK_MODELS = (
-  process.env.GEMINI_FALLBACK_MODELS ||
-  ""
+  process.env.GEMINI_FALLBACK_MODELS || ""
 )
   .split(",")
-  .map(item => item.trim())
+  .map(x => x.trim())
   .filter(Boolean);
 
 const OPENAI_API_KEY =
@@ -57,9 +56,7 @@ const OPENAI_MODEL =
   "gpt-5.6-terra";
 
 const MAX_PDF_MB =
-  Number(
-    process.env.MAX_PDF_MB || 20
-  );
+  Number(process.env.MAX_PDF_MB || 20);
 
 const MAX_SOURCE_CHARS =
   Number(
@@ -70,7 +67,7 @@ const FRONTEND_ORIGIN =
   process.env.FRONTEND_ORIGIN || "";
 
 // =====================================================
-// CLIENTS
+// AI CLIENTS
 // =====================================================
 
 const gemini = GEMINI_API_KEY
@@ -89,45 +86,45 @@ const openai = OPENAI_API_KEY
 // CORS
 // =====================================================
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5500",
-  "http://127.0.0.1:5500",
+const allowedOrigins =
+  FRONTEND_ORIGIN
+    .split(",")
+    .map(x => x.trim())
+    .filter(Boolean);
 
-  "https://tngovtservants.com",
-  "https://www.tngovtservants.com",
-
-  "https://tngovtservants-884498310.development.catalystserverless.com"
-];
 const corsOptions = {
-
   origin: function (origin, callback) {
 
-    // No Origin header
     if (!origin) {
       return callback(null, true);
     }
 
-    // Catalyst / local file / sandbox
     if (origin === "null") {
       return callback(null, true);
     }
 
-    // Allow wildcard
     if (allowedOrigins.includes("*")) {
       return callback(null, true);
     }
 
-    // Exact allowed origin
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    console.log("CORS blocked:", origin);
-    console.log("Allowed origins:", allowedOrigins);
+    console.log(
+      "CORS blocked origin:",
+      origin
+    );
+
+    console.log(
+      "Allowed origins:",
+      allowedOrigins
+    );
 
     return callback(
-      new Error(`CORS blocked origin: ${origin}`)
+      new Error(
+        `CORS blocked origin: ${origin}`
+      )
     );
   },
 
@@ -145,7 +142,10 @@ const corsOptions = {
   credentials: false
 };
 
-app.use(cors(corsOptions));
+app.use(
+  cors(corsOptions)
+);
+
 // =====================================================
 // SECURITY
 // =====================================================
@@ -184,41 +184,37 @@ const upload =
       multer.memoryStorage(),
 
     limits: {
-
       fileSize:
         MAX_PDF_MB *
         1024 *
         1024
     },
 
-    fileFilter: (
-      req,
-      file,
-      cb
-    ) => {
+    fileFilter:
+      (req, file, cb) => {
 
-      const isPDF =
-        file.mimetype ===
-          "application/pdf" ||
-        file.originalname
-          .toLowerCase()
-          .endsWith(".pdf");
+        const isPDF =
+          file.mimetype ===
+            "application/pdf" ||
+          file.originalname
+            .toLowerCase()
+            .endsWith(".pdf");
 
-      if (!isPDF) {
+        if (!isPDF) {
 
-        return cb(
-          new Error(
-            "PDF files only are allowed."
-          )
-        );
+          return cb(
+            new Error(
+              "PDF files only are allowed."
+            )
+          );
+        }
+
+        cb(null, true);
       }
-
-      cb(null, true);
-    }
   });
 
 // =====================================================
-// HELPERS
+// BASIC HELPERS
 // =====================================================
 
 function cleanText(value) {
@@ -246,9 +242,7 @@ function limitText(
   const text =
     cleanText(value);
 
-  if (
-    text.length <= max
-  ) {
+  if (text.length <= max) {
     return text;
   }
 
@@ -266,7 +260,6 @@ function ensureConfigured(
 ) {
 
   if (!client) {
-
     throw new Error(
       `${name} API key is not configured in environment variables.`
     );
@@ -275,9 +268,7 @@ function ensureConfigured(
 
 // -----------------------------------------------------
 
-function getErrorMessage(
-  error
-) {
+function getErrorMessage(error) {
 
   return (
     error?.message ||
@@ -300,34 +291,26 @@ function sleep(ms) {
 }
 
 // =====================================================
-// GEMINI MODEL LIST
+// GEMINI MODEL HELPERS
 // =====================================================
 
 function getGeminiModelCandidates() {
 
-  const candidates = [
+  return [
     GEMINI_MODEL,
     ...GEMINI_FALLBACK_MODELS
-  ];
-
-  return [
-    ...new Set(
-      candidates
-        .map(model =>
-          String(model).trim()
-        )
-        .filter(Boolean)
-    )
-  ];
+  ]
+    .map(x => x.trim())
+    .filter(Boolean)
+    .filter(
+      (value, index, array) =>
+        array.indexOf(value) === index
+    );
 }
 
-// =====================================================
-// GEMINI ERROR HELPERS
-// =====================================================
+// -----------------------------------------------------
 
-function getGeminiStatus(
-  error
-) {
+function getGeminiStatus(error) {
 
   return Number(
     error?.status ||
@@ -339,9 +322,7 @@ function getGeminiStatus(
 
 // -----------------------------------------------------
 
-function isGeminiRetryable(
-  error
-) {
+function isGeminiRetryable(error) {
 
   const status =
     getGeminiStatus(error);
@@ -363,9 +344,6 @@ function isGeminiRetryable(
       "temporarily unavailable"
     ) ||
     message.includes(
-      "unavailable"
-    ) ||
-    message.includes(
       "overloaded"
     )
   );
@@ -373,9 +351,7 @@ function isGeminiRetryable(
 
 // -----------------------------------------------------
 
-function isGeminiModelUnavailable(
-  error
-) {
+function isGeminiModelUnavailable(error) {
 
   const status =
     getGeminiStatus(error);
@@ -390,9 +366,6 @@ function isGeminiModelUnavailable(
       "model is not found"
     ) ||
     message.includes(
-      "not found"
-    ) ||
-    message.includes(
       "no longer available"
     ) ||
     message.includes(
@@ -402,7 +375,7 @@ function isGeminiModelUnavailable(
 }
 
 // =====================================================
-// GEMINI GENERATE WITH RETRY + FALLBACK
+// GEMINI GENERATION WITH RETRY
 // =====================================================
 
 async function generateWithGeminiFallback({
@@ -423,35 +396,23 @@ async function generateWithGeminiFallback({
   if (!models.length) {
 
     throw new Error(
-      "No Gemini models configured."
+      "No Gemini model configured."
     );
   }
 
-  let lastError =
-    null;
+  let lastError = null;
 
   for (
-    let modelIndex = 0;
-    modelIndex < models.length;
-    modelIndex++
+    const model of models
   ) {
-
-    const model =
-      models[modelIndex];
 
     console.log(
       `Gemini ${operationName} model: ${model}`
     );
 
-    // -------------------------------------------------
-    // Retry current model
-    // -------------------------------------------------
-
-    const maxAttempts = 3;
-
     for (
       let attempt = 1;
-      attempt <= maxAttempts;
+      attempt <= 3;
       attempt++
     ) {
 
@@ -463,7 +424,7 @@ async function generateWithGeminiFallback({
           );
 
         console.log(
-          `Gemini ${operationName} successful using ${model}`
+          `Gemini ${operationName} successful: ${model}`
         );
 
         return {
@@ -476,25 +437,29 @@ async function generateWithGeminiFallback({
         lastError =
           error;
 
-        const status =
-          getGeminiStatus(
-            error
-          );
-
         console.error(
-          `Gemini ${operationName} failed. Model: ${model}`
+          `Gemini ${operationName} failed`
         );
 
         console.error(
-          `Gemini status: ${status || "unknown"}`
+          `Model: ${model}`
         );
 
         console.error(
-          `Gemini message: ${getErrorMessage(error)}`
+          `Status: ${
+            getGeminiStatus(error) ||
+            "unknown"
+          }`
+        );
+
+        console.error(
+          `Message: ${
+            getErrorMessage(error)
+          }`
         );
 
         // -------------------------------------------------
-        // Model unavailable → next model immediately
+        // MODEL NOT AVAILABLE
         // -------------------------------------------------
 
         if (
@@ -504,14 +469,14 @@ async function generateWithGeminiFallback({
         ) {
 
           console.log(
-            `Gemini model ${model} unavailable. Trying next model...`
+            `Skipping unavailable model: ${model}`
           );
 
           break;
         }
 
         // -------------------------------------------------
-        // Retryable error
+        // TEMPORARY ERROR
         // -------------------------------------------------
 
         if (
@@ -521,14 +486,14 @@ async function generateWithGeminiFallback({
         ) {
 
           if (
-            attempt < maxAttempts
+            attempt < 3
           ) {
 
             const delay =
               attempt * 2000;
 
             console.log(
-              `Retrying Gemini in ${delay} ms...`
+              `Retrying in ${delay} ms...`
             );
 
             await sleep(
@@ -539,14 +504,14 @@ async function generateWithGeminiFallback({
           }
 
           console.log(
-            `Gemini ${model} failed after ${maxAttempts} attempts.`
+            `Model ${model} failed after 3 attempts.`
           );
 
           break;
         }
 
         // -------------------------------------------------
-        // Non-retryable
+        // OTHER ERROR
         // -------------------------------------------------
 
         throw error;
@@ -563,7 +528,7 @@ async function generateWithGeminiFallback({
 }
 
 // =====================================================
-// STRUCTURED OUTPUT SCHEMA
+// DRAFTING SCHEMA
 // =====================================================
 
 const draftingSchema = {
@@ -605,7 +570,7 @@ const draftingSchema = {
 };
 
 // =====================================================
-// COMMON DRAFTING INSTRUCTION
+// DRAFTING INSTRUCTION
 // =====================================================
 
 const DRAFTING_SYSTEM_INSTRUCTION = `
@@ -613,196 +578,165 @@ const DRAFTING_SYSTEM_INSTRUCTION = `
 You are an expert official drafting assistant for the
 Tamil Nadu Revenue Department and District Collectorate.
 
-Your task is to prepare:
+Prepare:
 
 1. Official Letter
 2. Official Note File
 
-IMPORTANT RULES:
+IMPORTANT:
 
-1. Do NOT search for Government Orders.
+- Use ONLY the facts supplied by the user.
+- Do NOT invent facts.
+- Do NOT invent Government Orders.
+- Do NOT search for Government Orders.
+- Do NOT invent proceedings numbers.
+- Do NOT invent dates.
+- Do NOT invent names.
+- Do NOT invent amounts.
+- Do NOT invent references.
 
-2. Do NOT invent Government Orders.
+Missing information must be shown as:
 
-3. Do NOT invent proceedings numbers, dates, names,
-   amounts, addresses, designations, file numbers,
-   references or legal provisions.
+[Name]
+[Designation]
+[Roc.No.]
+[Date]
+[Amount]
+[Reference]
 
-4. Use only facts available in the supplied source
-   and Work / Command.
+Use formal Tamil Nadu Government / District Collectorate
+official drafting style.
 
-5. If an essential fact is missing, use clear
-   placeholders such as:
+The Letter should be complete.
 
-   [Name]
-   [Designation]
-   [Roc.No.]
-   [Date]
-   [Amount]
-   [Reference]
+The Note File should contain:
 
-6. Never convert an allegation into an established fact.
+Background
+References
+Facts
+Action proposed
+Orders requested
 
-7. Preserve names, dates, amounts, references and
-   official terminology.
+For the LETTER:
 
-8. Use formal Tamil Nadu Government / Collectorate
-   drafting style.
+Preserve logical sections such as:
 
-9. The Note File should clearly explain:
+From
+To
+Roc.No.
+Date
+Subject
+Ref
+Sir/Madam
+Body paragraphs
+Yours faithfully
+Signature
+Enclosure
+//True Copy//
 
-   - Background
-   - References
-   - Facts
-   - Action required
-   - Orders requested
+Do not unnecessarily combine separate paragraphs.
 
-10. The Letter should be complete and ready for
-    official editing.
+Each distinct body paragraph should be separated by
+a blank line.
 
-11. If the requested language is Tamil,
-    prepare proper official Tamil.
+For Tamil use proper official Tamil.
 
-12. If the requested language is English,
-    prepare formal official English.
+For English use formal official English.
 
-13. Do not provide explanations outside the
-    requested structured output.
+Do not mention AI.
 
-14. Do not mention that AI was used.
-
-15. Do not mention these instructions.
-
-16. If the Work / Command conflicts with the source,
-    follow the latest explicit command but do not
-    fabricate facts.
-
-17. For Continue / Alter commands, preserve all valid
-    facts from the original source and revise the
-    previous drafts accordingly.
-
-18. The output must contain the complete revised
-    Letter and complete revised Note File.
-
-19. Do not add facts merely to make the draft appear
-    complete.
-
-20. Maintain official abbreviations and terminology
-    where supported by the source.
+Return only JSON matching the supplied schema.
 
 `;
 
 // =====================================================
-// CONTINUE / ALTER INSTRUCTION
+// CONTINUE INSTRUCTION
 // =====================================================
 
-const OPENAI_CONTINUE_SYSTEM_INSTRUCTION = `
+const CONTINUE_SYSTEM_INSTRUCTION = `
 
 You are an expert official drafting assistant for the
 Tamil Nadu Revenue Department and District Collectorate.
 
-You are performing a Continue / Alter operation.
+You are revising an existing Letter and Note File.
 
-Revise the previous Letter and Note File according
-to the latest explicit command.
+Preserve all valid facts from the original source.
 
-RULES:
+Apply the new Continue / Alter command.
 
-1. Preserve all valid original facts.
+Do NOT:
 
-2. Apply the latest Continue / Alter command.
+- invent facts
+- invent Government Orders
+- invent dates
+- invent amounts
+- invent names
+- invent references
+- introduce unrelated information
 
-3. Remove information only when specifically instructed.
+Return the COMPLETE revised Letter.
 
-4. Add only information supported by the original
-   source or the latest command.
+Return the COMPLETE revised Note File.
 
-5. Do NOT invent facts.
+Do not return only changed portions.
 
-6. Do NOT invent Government Orders.
+Maintain proper logical paragraphs.
 
-7. Do NOT search for Government Orders.
+Use formal Tamil Nadu Government / District Collectorate
+official drafting style.
 
-8. Do NOT introduce unrelated references.
+Do not mention AI.
 
-9. Preserve names, dates, amounts, file numbers,
-   proceedings numbers and official terminology.
-
-10. If information is missing, use placeholders.
-
-11. Return the COMPLETE revised Letter.
-
-12. Return the COMPLETE revised Note File.
-
-13. Do not return only changed portions.
-
-14. Use formal Tamil Nadu Government / Collectorate
-    drafting style.
-
-15. Do not mention AI.
-
-16. Return only the required structured JSON.
+Return only JSON matching the supplied schema.
 
 `;
 
 // =====================================================
-// GEMINI PDF EXTRACTION
+// GEMINI PDF OCR
 // =====================================================
 
 async function extractPdfTextWithGemini(
   pdfBuffer
 ) {
 
-  ensureConfigured(
-    gemini,
-    "Gemini"
-  );
-
   const base64PDF =
     pdfBuffer.toString(
       "base64"
     );
 
-  const extractionPrompt = `
+  const prompt = `
 
-You are an OCR and document transcription engine.
+Read the entire PDF.
 
-Read the entire supplied PDF carefully.
+Perform OCR if the PDF is scanned.
 
-The PDF may be:
+Extract ALL readable text from ALL pages.
 
-- a normal digital PDF
-- a scanned PDF
-- a photograph/scanned government document
-- a mixed PDF containing text and scanned pages
+Preserve:
 
-Extract the readable text from ALL pages.
+- names
+- dates
+- numbers
+- reference numbers
+- file numbers
+- Government Order numbers
+- amounts
+- addresses
+- headings
+- paragraphs
+- tables
 
-IMPORTANT:
+Do NOT summarize.
 
-1. Do OCR for scanned pages.
-2. Preserve page order.
-3. Preserve names.
-4. Preserve dates.
-5. Preserve numbers.
-6. Preserve reference numbers.
-7. Preserve Government Order numbers if present.
-8. Preserve file numbers.
-9. Preserve amounts.
-10. Preserve survey numbers and other identifiers.
-11. Preserve headings.
-12. Preserve paragraphs.
-13. Preserve tables as readable text.
-14. Do not summarize.
-15. Do not interpret.
-16. Do not translate.
-17. Do not add information.
-18. Do not create missing information.
-19. If a word is genuinely unreadable,
-    write [ILLEGIBLE].
-20. Return ONLY the extracted/transcribed text.
+Do NOT translate.
 
-Start from page 1 and continue through the last page.
+Do NOT interpret.
+
+Do NOT add information.
+
+If genuinely unreadable, use [ILLEGIBLE].
+
+Return ONLY the extracted text.
 
 `;
 
@@ -813,7 +747,7 @@ Start from page 1 and continue through the last page.
         "PDF OCR",
 
       requestFactory:
-        (model) =>
+        model =>
           gemini.models.generateContent({
 
             model,
@@ -822,7 +756,7 @@ Start from page 1 and continue through the last page.
 
               {
                 text:
-                  extractionPrompt
+                  prompt
               },
 
               {
@@ -848,30 +782,28 @@ Start from page 1 and continue through the last page.
           })
     });
 
-  const extractedText =
+  const text =
     cleanText(
       result.response.text ||
       ""
     );
 
-  if (!extractedText) {
+  if (!text) {
 
     throw new Error(
-      "Gemini did not return any extracted text."
+      "Gemini returned empty OCR text."
     );
   }
 
   return {
-    text:
-      extractedText,
-
+    text,
     model:
       result.model
   };
 }
 
 // =====================================================
-// OPENAI DRAFTING
+// OPENAI GENERATE
 // =====================================================
 
 async function generateDraftWithOpenAI({
@@ -901,24 +833,19 @@ SUBJECT:
 ${subject || "[Subject]"}
 
 SOURCE / RECEIVED TEXT:
------------------------
+========================
 ${limitText(sourceText)}
------------------------
+========================
 
 WORK / COMMAND:
-----------------
+===============
 ${limitText(
   workCommand,
   30000
 )}
-----------------
+===============
 
-Prepare the official Letter and Note File.
-
-Follow the Work / Command exactly where it does
-not conflict with the factual source.
-
-Return JSON according to the required schema.
+Prepare the complete official Letter and Note File.
 
 `;
 
@@ -962,37 +889,26 @@ Return JSON according to the required schema.
   if (!raw) {
 
     throw new Error(
-      "OpenAI did not return a drafting response."
+      "OpenAI returned empty output."
     );
   }
-
-  let result;
 
   try {
 
-    result =
-      JSON.parse(raw);
-
-  } catch (error) {
-
-    console.error(
-      "OpenAI JSON parse error:",
-      raw.substring(
-        0,
-        2000
-      )
+    return JSON.parse(
+      raw
     );
+
+  } catch {
 
     throw new Error(
-      "OpenAI returned an invalid structured response."
+      "OpenAI returned invalid JSON."
     );
   }
-
-  return result;
 }
 
 // =====================================================
-// GEMINI DRAFTING
+// GEMINI GENERATE
 // =====================================================
 
 async function generateDraftWithGemini({
@@ -1004,11 +920,6 @@ async function generateDraftWithGemini({
   subject
 
 }) {
-
-  ensureConfigured(
-    gemini,
-    "Gemini"
-  );
 
   const prompt = `
 
@@ -1036,21 +947,16 @@ ${limitText(
 )}
 ===============
 
-Prepare the complete official Letter
-and complete official Note File.
-
-Return ONLY JSON matching the supplied schema.
-
 `;
 
   const result =
     await generateWithGeminiFallback({
 
       operationName:
-        "drafting",
+        "Drafting",
 
       requestFactory:
-        (model) =>
+        model =>
           gemini.models.generateContent({
 
             model,
@@ -1084,7 +990,7 @@ Return ONLY JSON matching the supplied schema.
   if (!raw) {
 
     throw new Error(
-      "Gemini did not return a drafting response."
+      "Gemini returned empty drafting output."
     );
   }
 
@@ -1093,33 +999,26 @@ Return ONLY JSON matching the supplied schema.
   try {
 
     output =
-      JSON.parse(raw);
+      JSON.parse(
+        raw
+      );
 
-  } catch (error) {
-
-    console.error(
-      "Gemini JSON parse error:",
-      raw.substring(
-        0,
-        2000
-      )
-    );
+  } catch {
 
     throw new Error(
-      "Gemini returned an invalid structured response."
+      "Gemini returned invalid JSON."
     );
   }
 
   return {
     ...output,
-
     _model:
       result.model
   };
 }
 
 // =====================================================
-// OPENAI CONTINUE / ALTER
+// OPENAI CONTINUE
 // =====================================================
 
 async function alterDraftWithOpenAI({
@@ -1153,8 +1052,7 @@ ${subject || "[Subject]"}
 ORIGINAL SOURCE:
 ================
 ${limitText(
-  sourceText,
-  MAX_SOURCE_CHARS
+  sourceText
 )}
 ================
 
@@ -1182,22 +1080,7 @@ ${limitText(
 )}
 =============================
 
-Revise the previous Letter and Note File according
-to the new command.
-
-IMPORTANT:
-
-- Keep all valid original facts.
-- Apply the new command.
-- Remove information if specifically instructed.
-- Add only information supported by the source or command.
-- Do not invent facts.
-- Do not search for Government Orders.
-- Do not introduce unrelated Government Orders.
-- Preserve names, dates, amounts and references.
-- Return complete revised Letter.
-- Return complete revised Note File.
-- Do not return only changed portions.
+Revise both documents completely.
 
 `;
 
@@ -1208,7 +1091,7 @@ IMPORTANT:
         OPENAI_MODEL,
 
       instructions:
-        OPENAI_CONTINUE_SYSTEM_INSTRUCTION,
+        CONTINUE_SYSTEM_INSTRUCTION,
 
       input:
         prompt,
@@ -1241,37 +1124,26 @@ IMPORTANT:
   if (!raw) {
 
     throw new Error(
-      "OpenAI did not return a revised draft."
+      "OpenAI returned empty revised output."
     );
   }
-
-  let result;
 
   try {
 
-    result =
-      JSON.parse(raw);
-
-  } catch (error) {
-
-    console.error(
-      "OpenAI revised JSON parse error:",
-      raw.substring(
-        0,
-        2000
-      )
+    return JSON.parse(
+      raw
     );
+
+  } catch {
 
     throw new Error(
-      "OpenAI returned invalid revised draft JSON."
+      "OpenAI returned invalid revised JSON."
     );
   }
-
-  return result;
 }
 
 // =====================================================
-// GEMINI CONTINUE / ALTER
+// GEMINI CONTINUE
 // =====================================================
 
 async function alterDraftWithGemini({
@@ -1286,14 +1158,9 @@ async function alterDraftWithGemini({
 
 }) {
 
-  ensureConfigured(
-    gemini,
-    "Gemini"
-  );
-
   const prompt = `
 
-${OPENAI_CONTINUE_SYSTEM_INSTRUCTION}
+${CONTINUE_SYSTEM_INSTRUCTION}
 
 LANGUAGE:
 ${language || "English"}
@@ -1307,8 +1174,7 @@ ${subject || "[Subject]"}
 ORIGINAL SOURCE:
 ================
 ${limitText(
-  sourceText,
-  MAX_SOURCE_CHARS
+  sourceText
 )}
 ================
 
@@ -1336,8 +1202,6 @@ ${limitText(
 )}
 =============================
 
-Return ONLY JSON matching the supplied schema.
-
 `;
 
   const result =
@@ -1347,7 +1211,7 @@ Return ONLY JSON matching the supplied schema.
         "Continue / Alter",
 
       requestFactory:
-        (model) =>
+        model =>
           gemini.models.generateContent({
 
             model,
@@ -1381,7 +1245,7 @@ Return ONLY JSON matching the supplied schema.
   if (!raw) {
 
     throw new Error(
-      "Gemini did not return a revised draft."
+      "Gemini returned empty revised output."
     );
   }
 
@@ -1390,33 +1254,26 @@ Return ONLY JSON matching the supplied schema.
   try {
 
     output =
-      JSON.parse(raw);
+      JSON.parse(
+        raw
+      );
 
-  } catch (error) {
-
-    console.error(
-      "Gemini revised JSON parse error:",
-      raw.substring(
-        0,
-        2000
-      )
-    );
+  } catch {
 
     throw new Error(
-      "Gemini returned invalid revised draft JSON."
+      "Gemini returned invalid revised JSON."
     );
   }
 
   return {
     ...output,
-
     _model:
       result.model
   };
 }
 
 // =====================================================
-// OPENAI FALLBACK ERROR DETECTION
+// OPENAI FALLBACK CHECK
 // =====================================================
 
 function shouldFallbackToGemini(
@@ -1444,35 +1301,25 @@ function shouldFallbackToGemini(
       error.message || ""
     ).toLowerCase();
 
-  // HTTP 429
-  if (
-    status === 429
-  ) {
+  if (status === 429) {
     return true;
   }
 
-  const fallbackKeywords = [
+  const keywords = [
 
     "insufficient_quota",
-
     "credit_balance_exhausted",
-
     "insufficient credit",
-
     "quota",
-
     "billing",
-
     "rate limit",
-
     "rate_limit",
-
     "exceeded your current quota",
-
     "too many requests"
+
   ];
 
-  return fallbackKeywords.some(
+  return keywords.some(
     keyword =>
       code.includes(keyword) ||
       message.includes(keyword)
@@ -1487,7 +1334,7 @@ app.get(
   "/api/health",
   (req, res) => {
 
-    res.json({
+    return res.json({
 
       success:
         true,
@@ -1506,48 +1353,36 @@ app.get(
           GEMINI_API_KEY
         ),
 
-      openaiConfigured:
-        Boolean(
-          OPENAI_API_KEY
-        ),
-
       geminiModel:
         GEMINI_MODEL,
 
       geminiFallbackModels:
         GEMINI_FALLBACK_MODELS,
 
-      openaiModel:
-        OPENAI_MODEL,
-
-      pdfOCR:
-        Boolean(
-          GEMINI_API_KEY
-        ),
-
-      openaiDrafting:
+      openaiConfigured:
         Boolean(
           OPENAI_API_KEY
         ),
 
-      geminiDrafting:
-        Boolean(
-          GEMINI_API_KEY
-        ),
-
-      drafting:
-        Boolean(
-          OPENAI_API_KEY ||
-          GEMINI_API_KEY
-        ),
+      openaiModel:
+        OPENAI_MODEL,
 
       automaticFallback:
         Boolean(
-          OPENAI_API_KEY &&
-          GEMINI_API_KEY
+          GEMINI_API_KEY &&
+          OPENAI_API_KEY
         ),
 
+      pdfOCR:
+        "Gemini",
+
+      drafting:
+        "OpenAI → Gemini",
+
       wordGeneration:
+        true,
+
+      wordAlignment:
         true,
 
       frontendConfigured:
@@ -1562,7 +1397,7 @@ app.get(
 );
 
 // =====================================================
-// GEMINI AVAILABLE MODELS
+// GEMINI MODEL LIST
 // =====================================================
 
 app.get(
@@ -1590,12 +1425,12 @@ app.get(
         of gemini.models.list()
       ) {
 
-        const supportedActions =
+        const actions =
           model.supportedActions ||
           [];
 
         if (
-          supportedActions.includes(
+          actions.includes(
             "generateContent"
           )
         ) {
@@ -1608,7 +1443,8 @@ app.get(
             displayName:
               model.displayName,
 
-            supportedActions
+            supportedActions:
+              actions
           });
         }
       }
@@ -1646,14 +1482,12 @@ app.get(
 );
 
 // =====================================================
-// PDF → TEXT
+// PDF TO TEXT
 // =====================================================
 
 app.post(
   "/api/pdf-to-text",
-
   upload.single("pdf"),
-
   async (
     req,
     res,
@@ -1678,33 +1512,15 @@ app.post(
         `PDF received: ${req.file.originalname}`
       );
 
-      console.log(
-        `PDF size: ${
-          (
-            req.file.size /
-            1024 /
-            1024
-          ).toFixed(2)
-        } MB`
-      );
-
-      console.log(
-        "Sending PDF to Gemini for OCR/document extraction..."
-      );
-
       const result =
         await extractPdfTextWithGemini(
           req.file.buffer
         );
 
-      const limitedText =
+      const text =
         limitText(
           result.text
         );
-
-      console.log(
-        `Gemini extraction completed. Characters: ${limitedText.length}`
-      );
 
       return res.json({
 
@@ -1714,11 +1530,10 @@ app.post(
         filename:
           req.file.originalname,
 
-        text:
-          limitedText,
+        text,
 
         characterCount:
-          limitedText.length,
+          text.length,
 
         provider:
           "Gemini",
@@ -1729,24 +1544,17 @@ app.post(
 
     } catch (error) {
 
-      console.error(
-        "PDF extraction error:",
-        error
-      );
-
       next(error);
     }
   }
 );
 
 // =====================================================
-// GENERATE LETTER + NOTE FILE
-// OPENAI → GEMINI FALLBACK
+// GENERATE
 // =====================================================
 
 app.post(
   "/api/generate",
-
   async (
     req,
     res,
@@ -1762,10 +1570,6 @@ app.post(
         recipient,
         subject
       } = req.body;
-
-      // -------------------------------------------------
-      // VALIDATION
-      // -------------------------------------------------
 
       if (
         !cleanText(
@@ -1800,7 +1604,7 @@ app.post(
       }
 
       // -------------------------------------------------
-      // OPENAI FIRST
+      // OPENAI
       // -------------------------------------------------
 
       if (openai) {
@@ -1808,15 +1612,7 @@ app.post(
         try {
 
           console.log(
-            "=============================================="
-          );
-
-          console.log(
             "Trying OpenAI for Letter + Note File..."
-          );
-
-          console.log(
-            `OpenAI model: ${OPENAI_MODEL}`
           );
 
           const result =
@@ -1832,10 +1628,6 @@ app.post(
 
               subject
             });
-
-          console.log(
-            "OpenAI drafting successful."
-          );
 
           return res.json({
 
@@ -1859,47 +1651,24 @@ app.post(
         ) {
 
           console.error(
-            "OpenAI drafting failed."
-          );
-
-          console.error(
-            "OpenAI status:",
-            openAIError.status ||
-            openAIError.statusCode ||
-            "unknown"
-          );
-
-          console.error(
-            "OpenAI code:",
-            openAIError.code ||
-            "unknown"
-          );
-
-          console.error(
-            "OpenAI message:",
+            "OpenAI drafting failed:",
             getErrorMessage(
               openAIError
             )
           );
 
           if (
-            shouldFallbackToGemini(
+            !shouldFallbackToGemini(
               openAIError
             )
           ) {
 
-            console.log(
-              "OpenAI quota/billing/rate limit detected."
-            );
-
-            console.log(
-              "Switching automatically to Gemini..."
-            );
-
-          } else {
-
             throw openAIError;
           }
+
+          console.log(
+            "Switching automatically to Gemini..."
+          );
         }
       }
 
@@ -1915,13 +1684,9 @@ app.post(
             false,
 
           message:
-            "OpenAI is unavailable and Gemini API is not configured."
+            "OpenAI failed and Gemini is not configured."
         });
       }
-
-      console.log(
-        "Generating Letter + Note File using Gemini..."
-      );
 
       const result =
         await generateDraftWithGemini({
@@ -1936,10 +1701,6 @@ app.post(
 
           subject
         });
-
-      console.log(
-        "Gemini drafting successful."
-      );
 
       return res.json({
 
@@ -1963,11 +1724,6 @@ app.post(
 
     } catch (error) {
 
-      console.error(
-        "Generation error:",
-        error
-      );
-
       next(error);
     }
   }
@@ -1975,12 +1731,10 @@ app.post(
 
 // =====================================================
 // CONTINUE / ALTER
-// OPENAI → GEMINI FALLBACK
 // =====================================================
 
 app.post(
   "/api/continue",
-
   async (
     req,
     res,
@@ -1998,10 +1752,6 @@ app.post(
         recipient,
         subject
       } = req.body;
-
-      // -------------------------------------------------
-      // VALIDATION
-      // -------------------------------------------------
 
       if (
         !cleanText(
@@ -2068,24 +1818,12 @@ app.post(
       }
 
       // -------------------------------------------------
-      // OPENAI FIRST
+      // OPENAI
       // -------------------------------------------------
 
       if (openai) {
 
         try {
-
-          console.log(
-            "=============================================="
-          );
-
-          console.log(
-            "Trying OpenAI for Continue / Alter..."
-          );
-
-          console.log(
-            `OpenAI model: ${OPENAI_MODEL}`
-          );
 
           const result =
             await alterDraftWithOpenAI({
@@ -2104,10 +1842,6 @@ app.post(
 
               subject
             });
-
-          console.log(
-            "OpenAI Continue / Alter successful."
-          );
 
           return res.json({
 
@@ -2131,52 +1865,29 @@ app.post(
         ) {
 
           console.error(
-            "OpenAI Continue / Alter failed."
-          );
-
-          console.error(
-            "OpenAI status:",
-            openAIError.status ||
-            openAIError.statusCode ||
-            "unknown"
-          );
-
-          console.error(
-            "OpenAI code:",
-            openAIError.code ||
-            "unknown"
-          );
-
-          console.error(
-            "OpenAI message:",
+            "OpenAI Continue / Alter failed:",
             getErrorMessage(
               openAIError
             )
           );
 
           if (
-            shouldFallbackToGemini(
+            !shouldFallbackToGemini(
               openAIError
             )
           ) {
 
-            console.log(
-              "OpenAI quota/billing/rate limit detected."
-            );
-
-            console.log(
-              "Switching Continue / Alter to Gemini..."
-            );
-
-          } else {
-
             throw openAIError;
           }
+
+          console.log(
+            "Switching Continue / Alter to Gemini..."
+          );
         }
       }
 
       // -------------------------------------------------
-      // GEMINI FALLBACK
+      // GEMINI
       // -------------------------------------------------
 
       if (!gemini) {
@@ -2187,13 +1898,9 @@ app.post(
             false,
 
           message:
-            "OpenAI is unavailable and Gemini API is not configured."
+            "OpenAI failed and Gemini is not configured."
         });
       }
-
-      console.log(
-        "Generating revised draft using Gemini..."
-      );
 
       const result =
         await alterDraftWithGemini({
@@ -2212,10 +1919,6 @@ app.post(
 
           subject
         });
-
-      console.log(
-        "Gemini Continue / Alter successful."
-      );
 
       return res.json({
 
@@ -2239,68 +1942,786 @@ app.post(
 
     } catch (error) {
 
-      console.error(
-        "Continue / Alter error:",
-        error
-      );
-
       next(error);
     }
   }
 );
 
 // =====================================================
-// WORD HELPERS
+// WORD DOCUMENT HELPERS
 // =====================================================
 
-function textToParagraphs(
-  text
+// Detect Tamil
+function containsTamil(text) {
+
+  return /[\u0B80-\u0BFF]/.test(
+    text || ""
+  );
+}
+
+// -----------------------------------------------------
+
+function getFont(text) {
+
+  return containsTamil(text)
+    ? "Nirmala UI"
+    : "Times New Roman";
+}
+
+// -----------------------------------------------------
+
+function makeTextRun(
+  text,
+  options = {}
 ) {
 
-  const cleaned =
-    cleanText(text);
+  return new TextRun({
 
-  if (!cleaned) {
+    text,
 
-    return [
+    font:
+      options.font ||
+      getFont(text),
+
+    size:
+      options.size ||
+      24,
+
+    bold:
+      options.bold ||
+      false,
+
+    italics:
+      options.italics ||
+      false,
+
+    break:
+      options.break
+  });
+}
+
+// =====================================================
+// LETTER CLASSIFICATION
+// =====================================================
+
+function classifyLetterLine(
+  line
+) {
+
+  const text =
+    cleanText(line);
+
+  const lower =
+    text.toLowerCase();
+
+  // Empty
+  if (!text) {
+    return "empty";
+  }
+
+  // From
+  if (
+    /^(from\s*:|அனுப்புநர்\s*:)/i.test(
+      text
+    )
+  ) {
+    return "from";
+  }
+
+  // To
+  if (
+    /^(to\s*:|பெறுநர்\s*:)/i.test(
+      text
+    )
+  ) {
+    return "to";
+  }
+
+  // Subject
+  if (
+    /^(subject\s*:|sub\s*:|பொருள்\s*:)/i.test(
+      text
+    )
+  ) {
+    return "subject";
+  }
+
+  // Reference
+  if (
+    /^(ref\s*:|reference\s*:|மேற்கோள்\s*:)/i.test(
+      text
+    )
+  ) {
+    return "reference";
+  }
+
+  // Sir / Madam
+  if (
+    /^(sir|madam|sir\/madam|மதிப்பிற்குரிய)/i.test(
+      text
+    )
+  ) {
+    return "salutation";
+  }
+
+  // Closing
+  if (
+    /^(yours faithfully|yours sincerely|faithfully|தங்கள் உண்மையுள்ள)/i.test(
+      text
+    )
+  ) {
+    return "closing";
+  }
+
+  // Enclosure
+  if (
+    /^(encl|enclosure|enclosures|இணைப்பு)/i.test(
+      text
+    )
+  ) {
+    return "enclosure";
+  }
+
+  // True copy
+  if (
+    lower.includes(
+      "//true copy//"
+    ) ||
+    lower.includes(
+      "true copy"
+    ) ||
+    text.includes(
+      "//மெய்ப்பிரதி//"
+    )
+  ) {
+    return "truecopy";
+  }
+
+  // Roc / Date
+  if (
+    /^(roc\.?|rc\.?|proceedings|ந\.க\.|நாள்\s*:|date\s*:)/i.test(
+      text
+    )
+  ) {
+    return "referenceHeader";
+  }
+
+  // Signature/designation
+  if (
+    /^(district collector|collector|personal assistant|tahsildar|revenue divisional officer|senior revenue inspector|மாவட்ட ஆட்சியர்|வட்டாட்சியர்)/i.test(
+      text
+    )
+  ) {
+    return "signature";
+  }
+
+  return "body";
+}
+
+// =====================================================
+// WORD LETTER PARAGRAPHS
+// =====================================================
+
+function buildLetterParagraphs(
+  letter
+) {
+
+  const normalized =
+    cleanText(letter);
+
+  const lines =
+    normalized
+      .split("\n")
+      .map(x => x.trim());
+
+  const paragraphs = [];
+
+  let bodyBuffer = [];
+
+  function flushBody() {
+
+    if (
+      bodyBuffer.length === 0
+    ) {
+      return;
+    }
+
+    const bodyText =
+      bodyBuffer.join(" ");
+
+    paragraphs.push(
 
       new Paragraph({
 
+        alignment:
+          AlignmentType.JUSTIFIED,
+
+        spacing: {
+
+          line:
+            320,
+
+          after:
+            160
+        },
+
+        indent: {
+
+          firstLine:
+            567
+        },
+
         children: [
 
-          new TextRun("")
+          makeTextRun(
+            bodyText,
+            {
+              size: 24
+            }
+          )
         ]
       })
-    ];
+    );
+
+    bodyBuffer = [];
   }
 
-  return cleaned
-    .split(/\n/)
-    .map(
-      line => {
+  for (
+    let i = 0;
+    i < lines.length;
+    i++
+  ) {
 
-        return new Paragraph({
+    const line =
+      lines[i];
+
+    if (!line) {
+
+      flushBody();
+
+      continue;
+    }
+
+    const type =
+      classifyLetterLine(
+        line
+      );
+
+    // -------------------------------------------------
+    // BODY
+    // -------------------------------------------------
+
+    if (
+      type === "body"
+    ) {
+
+      bodyBuffer.push(
+        line
+      );
+
+      continue;
+    }
+
+    flushBody();
+
+    // -------------------------------------------------
+    // FROM
+    // -------------------------------------------------
+
+    if (
+      type === "from"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.LEFT,
 
           spacing: {
-
-            after: 120
+            after: 80
           },
 
           children: [
 
-            new TextRun({
-
-              text:
-                line
-            })
+            makeTextRun(
+              line,
+              {
+                bold: true
+              }
+            )
           ]
-        });
-      }
-    );
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // TO
+    // -------------------------------------------------
+
+    if (
+      type === "to"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.LEFT,
+
+          spacing: {
+            after: 80
+          },
+
+          children: [
+
+            makeTextRun(
+              line,
+              {
+                bold: true
+              }
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // SUBJECT
+    // -------------------------------------------------
+
+    if (
+      type === "subject"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.LEFT,
+
+          spacing: {
+
+            before:
+              120,
+
+            after:
+              160
+          },
+
+          children: [
+
+            makeTextRun(
+              line,
+              {
+                bold: true
+              }
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // REFERENCE
+    // -------------------------------------------------
+
+    if (
+      type === "reference"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.LEFT,
+
+          spacing: {
+            after: 100
+          },
+
+          children: [
+
+            makeTextRun(
+              line,
+              {
+                bold: false
+              }
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // ROC / DATE
+    // -------------------------------------------------
+
+    if (
+      type ===
+      "referenceHeader"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.RIGHT,
+
+          spacing: {
+            after: 80
+          },
+
+          children: [
+
+            makeTextRun(
+              line
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // SALUTATION
+    // -------------------------------------------------
+
+    if (
+      type ===
+      "salutation"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.LEFT,
+
+          spacing: {
+
+            before:
+              160,
+
+            after:
+              160
+          },
+
+          children: [
+
+            makeTextRun(
+              line
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // CLOSING
+    // -------------------------------------------------
+
+    if (
+      type === "closing"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.RIGHT,
+
+          spacing: {
+
+            before:
+              240,
+
+            after:
+              80
+          },
+
+          children: [
+
+            makeTextRun(
+              line
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // SIGNATURE
+    // -------------------------------------------------
+
+    if (
+      type === "signature"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.RIGHT,
+
+          spacing: {
+
+            after:
+              80
+          },
+
+          children: [
+
+            makeTextRun(
+              line,
+              {
+                bold:
+                  true
+              }
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // ENCLOSURE
+    // -------------------------------------------------
+
+    if (
+      type === "enclosure"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.LEFT,
+
+          spacing: {
+
+            before:
+              160,
+
+            after:
+              120
+          },
+
+          children: [
+
+            makeTextRun(
+              line,
+              {
+                bold:
+                  true
+              }
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    // -------------------------------------------------
+    // TRUE COPY
+    // -------------------------------------------------
+
+    if (
+      type === "truecopy"
+    ) {
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.CENTER,
+
+          spacing: {
+
+            before:
+              240,
+
+            after:
+              120
+          },
+
+          children: [
+
+            makeTextRun(
+              line,
+              {
+                bold:
+                  true
+              }
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+  }
+
+  flushBody();
+
+  return paragraphs;
 }
 
 // =====================================================
-// CREATE WORD DOCUMENT
+// NOTE FILE PARAGRAPHS
+// =====================================================
+
+function buildNoteFileParagraphs(
+  noteFile
+) {
+
+  const normalized =
+    cleanText(
+      noteFile
+    );
+
+  const lines =
+    normalized
+      .split("\n")
+      .map(x => x.trim());
+
+  const paragraphs = [];
+
+  let buffer = [];
+
+  function flush() {
+
+    if (
+      buffer.length === 0
+    ) {
+      return;
+    }
+
+    const text =
+      buffer.join(" ");
+
+    paragraphs.push(
+
+      new Paragraph({
+
+        alignment:
+          AlignmentType.JUSTIFIED,
+
+        spacing: {
+
+          line:
+            320,
+
+          after:
+            160
+        },
+
+        indent: {
+
+          firstLine:
+            567
+        },
+
+        children: [
+
+          makeTextRun(
+            text
+          )
+        ]
+      })
+    );
+
+    buffer = [];
+  }
+
+  for (
+    const line of lines
+  ) {
+
+    if (!line) {
+
+      flush();
+
+      continue;
+    }
+
+    // Heading detection
+    const isHeading =
+      /^(subject|sub|ref|reference|submitted|background|facts|proposal|orders requested|note file|न\.க\.|பொருள்|முன்னிலை|குறிப்பு|சமர்ப்பிக்கப்படுகிறது)/i
+        .test(line);
+
+    if (isHeading) {
+
+      flush();
+
+      paragraphs.push(
+
+        new Paragraph({
+
+          alignment:
+            AlignmentType.LEFT,
+
+          spacing: {
+
+            before:
+              160,
+
+            after:
+              120
+          },
+
+          children: [
+
+            makeTextRun(
+              line,
+              {
+                bold:
+                  true
+              }
+            )
+          ]
+        })
+      );
+
+      continue;
+    }
+
+    buffer.push(line);
+  }
+
+  flush();
+
+  return paragraphs;
+}
+
+// =====================================================
+// CREATE WORD
 // =====================================================
 
 async function createWordDocument({
@@ -2310,32 +2731,128 @@ async function createWordDocument({
 
 }) {
 
+  const letterParagraphs =
+    buildLetterParagraphs(
+      letter
+    );
+
+  const noteParagraphs =
+    buildNoteFileParagraphs(
+      noteFile
+    );
+
   const document =
     new Document({
+
+      styles: {
+
+        default: {
+
+          document: {
+
+            run: {
+
+              font:
+                "Nirmala UI",
+
+              size:
+                24
+            },
+
+            paragraph: {
+
+              spacing: {
+
+                line:
+                  320,
+
+                after:
+                  120
+              }
+            }
+          }
+        }
+      },
 
       sections: [
 
         {
 
-          properties: {},
+          properties: {
+
+            page: {
+
+              size: {
+
+                width:
+                  11906,
+
+                height:
+                  16838
+              },
+
+              margin: {
+
+                top:
+                  1134,
+
+                right:
+                  1134,
+
+                bottom:
+                  1134,
+
+                left:
+                  1134
+              }
+            }
+          },
 
           children: [
 
+            // -------------------------------------------------
+            // LETTER TITLE
+            // -------------------------------------------------
+
             new Paragraph({
 
-              text:
-                "OFFICIAL LETTER",
-
-              heading:
-                HeadingLevel.HEADING_1,
-
               alignment:
-                AlignmentType.CENTER
+                AlignmentType.CENTER,
+
+              spacing: {
+
+                after:
+                  300
+              },
+
+              children: [
+
+                new TextRun({
+
+                  text:
+                    "OFFICIAL LETTER",
+
+                  bold:
+                    true,
+
+                  font:
+                    "Nirmala UI",
+
+                  size:
+                    28
+                })
+              ]
             }),
 
-            ...textToParagraphs(
-              letter
-            ),
+            // -------------------------------------------------
+            // LETTER
+            // -------------------------------------------------
+
+            ...letterParagraphs,
+
+            // -------------------------------------------------
+            // PAGE BREAK
+            // -------------------------------------------------
 
             new Paragraph({
 
@@ -2345,21 +2862,45 @@ async function createWordDocument({
               ]
             }),
 
+            // -------------------------------------------------
+            // NOTE FILE TITLE
+            // -------------------------------------------------
+
             new Paragraph({
 
-              text:
-                "NOTE FILE",
-
-              heading:
-                HeadingLevel.HEADING_1,
-
               alignment:
-                AlignmentType.CENTER
+                AlignmentType.CENTER,
+
+              spacing: {
+
+                after:
+                  300
+              },
+
+              children: [
+
+                new TextRun({
+
+                  text:
+                    "NOTE FILE",
+
+                  bold:
+                    true,
+
+                  font:
+                    "Nirmala UI",
+
+                  size:
+                    28
+                })
+              ]
             }),
 
-            ...textToParagraphs(
-              noteFile
-            )
+            // -------------------------------------------------
+            // NOTE FILE
+            // -------------------------------------------------
+
+            ...noteParagraphs
           ]
         }
       ]
@@ -2376,7 +2917,6 @@ async function createWordDocument({
 
 app.post(
   "/api/download-word",
-
   async (
     req,
     res,
@@ -2454,11 +2994,6 @@ app.post(
 
     } catch (error) {
 
-      console.error(
-        "Word generation error:",
-        error
-      );
-
       next(error);
     }
   }
@@ -2507,7 +3042,7 @@ app.use(
     );
 
     // -------------------------------------------------
-    // Multer
+    // MULTER FILE SIZE
     // -------------------------------------------------
 
     if (
@@ -2554,7 +3089,7 @@ app.use(
     }
 
     // -------------------------------------------------
-    // PDF validation
+    // PDF TYPE
     // -------------------------------------------------
 
     if (
@@ -2573,12 +3108,11 @@ app.use(
     }
 
     // -------------------------------------------------
-    // Generic
+    // GENERIC
     // -------------------------------------------------
 
     return res.status(
-      error.status ||
-      500
+      error.status || 500
     ).json({
 
       success:
@@ -2602,7 +3136,6 @@ const server =
     () => {
 
       console.log("");
-
       console.log(
         "=================================================="
       );
@@ -2635,9 +3168,9 @@ const server =
       );
 
       console.log(
-        `Gemini        : ${Boolean(
-          GEMINI_API_KEY
-        )}`
+        `Gemini        : ${
+          Boolean(GEMINI_API_KEY)
+        }`
       );
 
       console.log(
@@ -2648,15 +3181,14 @@ const server =
         `Gemini Fallbacks : ${
           GEMINI_FALLBACK_MODELS.join(
             ", "
-          ) ||
-          "None"
+          ) || "None"
         }`
       );
 
       console.log(
-        `OpenAI        : ${Boolean(
-          OPENAI_API_KEY
-        )}`
+        `OpenAI        : ${
+          Boolean(OPENAI_API_KEY)
+        }`
       );
 
       console.log(
@@ -2668,15 +3200,19 @@ const server =
       );
 
       console.log(
-        `Drafting      : OpenAI → Gemini fallback`
-      );
-
-      console.log(
-        `Continue      : OpenAI → Gemini fallback`
+        `Drafting      : OpenAI → Gemini`
       );
 
       console.log(
         `Word          : Node.js`
+      );
+
+      console.log(
+        `Word Alignment: ENABLED`
+      );
+
+      console.log(
+        `A4 Page       : ENABLED`
       );
 
       console.log(
@@ -2699,9 +3235,7 @@ const server =
 // GRACEFUL SHUTDOWN
 // =====================================================
 
-function shutdown(
-  signal
-) {
+function shutdown(signal) {
 
   console.log(
     `${signal} received. Shutting down server...`
