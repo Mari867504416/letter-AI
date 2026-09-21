@@ -1400,42 +1400,77 @@ app.get(
 // GEMINI MODEL LIST
 // =====================================================
 
+// =====================================================
+// GEMINI AVAILABLE MODELS
+// REST API VERSION
+// =====================================================
+
 app.get(
   "/api/gemini-models",
   async (req, res) => {
 
     try {
 
-      if (!gemini) {
+      if (!GEMINI_API_KEY) {
 
         return res.status(500).json({
-
-          success:
-            false,
-
+          success: false,
           message:
             "GEMINI_API_KEY is not configured."
         });
       }
 
-      const models = [];
-
-      for await (
-        const model
-        of gemini.models.list()
-      ) {
-
-        const actions =
-          model.supportedActions ||
-          [];
-
-        if (
-          actions.includes(
-            "generateContent"
+      const response =
+        await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models?key=" +
+          encodeURIComponent(
+            GEMINI_API_KEY
           )
-        ) {
+        );
 
-          models.push({
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+
+        console.error(
+          "Gemini REST model list error:",
+          data
+        );
+
+        return res.status(
+          response.status
+        ).json({
+
+          success: false,
+
+          message:
+            data?.error?.message ||
+            "Unable to retrieve Gemini models.",
+
+          status:
+            response.status
+        });
+      }
+
+      const allModels =
+        Array.isArray(data.models)
+          ? data.models
+          : [];
+
+      const models =
+        allModels
+          .filter(model => {
+
+            const methods =
+              model.supportedGenerationMethods ||
+              [];
+
+            return methods.includes(
+              "generateContent"
+            );
+          })
+          .map(model => ({
 
             name:
               model.name,
@@ -1443,44 +1478,49 @@ app.get(
             displayName:
               model.displayName,
 
-            supportedActions:
-              actions
-          });
-        }
-      }
+            description:
+              model.description,
+
+            inputTokenLimit:
+              model.inputTokenLimit,
+
+            outputTokenLimit:
+              model.outputTokenLimit,
+
+            supportedGenerationMethods:
+              model.supportedGenerationMethods ||
+              []
+          }));
 
       return res.json({
 
-        success:
-          true,
+        success: true,
 
         count:
           models.length,
 
         models
+
       });
 
     } catch (error) {
 
       console.error(
-        "Gemini model list error:",
+        "Gemini REST model list error:",
         error
       );
 
       return res.status(500).json({
 
-        success:
-          false,
+        success: false,
 
         message:
-          getErrorMessage(
-            error
-          )
+          error.message ||
+          "Unable to retrieve Gemini models."
       });
     }
   }
 );
-
 // =====================================================
 // PDF TO TEXT
 // =====================================================
